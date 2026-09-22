@@ -1,297 +1,385 @@
 import Link from 'next/link';
+import {
+  ShieldCheck,
+  ServerOff,
+  Network,
+  Zap,
+  KeyRound,
+  Cpu,
+} from 'lucide-react';
 import './landing.css';
 import { SmoothScroll } from '@/components/smooth-scroll';
 import { NodeLine } from '@/components/node-line';
 import { mono } from '@/lib/fonts';
 
-const tiers = [
+const features = [
   {
-    name: 'citizen',
-    who: 'Every GUI client',
-    reservations: '8 (2/peer)',
-    circuits: '16 (2/peer)',
-    cap: '16 MiB',
+    icon: ShieldCheck,
+    title: 'End-to-end encrypted',
+    body: 'ChaCha20-Poly1305 with per-session HKDF hash-chain keys. A fresh key per message, forward secrecy throughout.',
   },
   {
-    name: 'node',
-    who: 'peers --node',
-    reservations: '64 (4/peer)',
-    circuits: '64 (8/peer)',
-    cap: '128 MiB',
+    icon: ServerOff,
+    title: 'Serverless by design',
+    body: 'No backend, no accounts, no phone numbers, no database. Private keys never leave the Rust backend.',
   },
   {
-    name: 'off',
-    who: 'PEERS_NO_RELAY=1',
-    reservations: '0',
-    circuits: '0',
-    cap: 'none',
+    icon: Network,
+    title: 'Peer-to-peer mesh',
+    body: 'Gossipsub live topics plus Kademlia DHT blob parking on the public libp2p network. Senders can go offline.',
+  },
+  {
+    icon: Zap,
+    title: 'Cross-NAT relaying',
+    body: 'Always-on nodes give two home routers a rendezvous point, then DCUtR hole-punching upgrades them to direct.',
+  },
+  {
+    icon: KeyRound,
+    title: 'Seed-phrase identity',
+    body: 'A BIP39 12/24-word phrase is the private key. Same phrase rebuilds the same peer ID on any machine.',
+  },
+  {
+    icon: Cpu,
+    title: 'Low-end friendly',
+    body: 'A node idles at 30 to 60 MB of RAM. Raspberry Pi, old laptops and cheap VPSs carry the backbone.',
   },
 ];
 
-const projects = [
-  {
-    href: '/docs/peers',
-    name: 'Peers',
-    kind: 'The messenger',
-    body: 'Tauri desktop app. Rust crypto core, React shell. Keys never leave the backend. BIP39 seed-phrase identity, servers with signed member lists, DHT blob parking.',
-  },
-  {
-    href: '/docs/dir-api',
-    name: 'Directory API',
-    kind: 'The registry',
-    body: 'Live list of relay nodes on Cloudflare Workers. Self-certifying peer IDs, atomic nonces, adaptive heartbeat cadence. Client fetching is planned, not yet wired.',
-  },
-  {
-    href: '/docs/ptero-egg',
-    name: 'Pterodactyl egg',
-    kind: 'The deployment',
-    body: 'One-click relay nodes on game-server panels. Custom runtime image, public-IP detect, identity-safe reinstalls.',
-  },
+const metrics = [
+  { value: '30–60 MB', label: 'Idle RAM per node' },
+  { value: '4', label: 'Environment variables, total' },
+  { value: '64', label: 'Relay slots per node' },
+  { value: '12 words', label: 'Is your whole identity' },
 ];
+
+function Bar({
+  label,
+  detail,
+  value,
+  max,
+  tone,
+}: {
+  label: string;
+  detail: string;
+  value: number;
+  max: number;
+  tone: string;
+}) {
+  const pct = Math.max(2, Math.round((value / max) * 100));
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-4">
+        <p className="text-[15px] font-medium text-white">
+          {label} <span className="font-normal text-[#98a2b3]">{detail}</span>
+        </p>
+        <p className={`${mono.className} shrink-0 text-sm text-white`}>{value}</p>
+      </div>
+      <div
+        className="bar-track mt-2 h-2.5"
+        role="img"
+        aria-label={`${label}: ${value} of ${max}`}
+      >
+        <div className={`bar-fill h-full ${tone}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
     <SmoothScroll>
-      <div className="landing grain min-h-screen">
-        <header className="border-b border-[#e4e1d6]">
-          <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-6">
+      <div className="landing min-h-screen">
+        <header className="sticky inset-x-0 top-0 z-50 border-b border-white/5 bg-[#0b0d10]">
+          <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
             <Link href="/" className="flex items-center gap-2.5">
               <span
                 aria-hidden
-                className="flex h-7 w-7 items-center justify-center rounded-md bg-[#1c1b17] text-sm font-bold text-[#fafaf7]"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ff6b35] text-base font-bold text-[#0b0d10]"
               >
                 P
               </span>
               <span className="text-[17px] font-semibold tracking-tight">PeersTech</span>
             </Link>
-            <nav className="flex items-center gap-6 text-[15px]">
-              <Link
-                href="/docs/peers/running-a-node"
-                className="hidden text-[#5f5d55] transition-colors hover:text-[#1c1b17] sm:inline"
-              >
-                Run a node
+            <nav className="hidden items-center gap-8 text-[15px] text-[#98a2b3] sm:flex">
+              <Link href="/docs/peers" className="transition-colors hover:text-white">
+                Peers
               </Link>
-              <Link
-                href="https://github.com/PeersTech/Peers"
-                className="hidden text-[#5f5d55] transition-colors hover:text-[#1c1b17] sm:inline"
-              >
-                GitHub
+              <Link href="/docs/dir-api" className="transition-colors hover:text-white">
+                Directory
               </Link>
-              <Link
-                href="/docs"
-                className="rounded-lg bg-[#1c1b17] px-4 py-2.5 text-[15px] font-medium text-[#fafaf7] transition-transform hover:scale-[1.03]"
-              >
-                Read the docs
+              <Link href="/docs/ptero-egg" className="transition-colors hover:text-white">
+                Nodes
               </Link>
             </nav>
+            <Link
+              href="/docs"
+              className="rounded-lg bg-[#ff6b35] px-4 py-2.5 text-sm font-semibold text-[#0b0d10] transition-transform hover:scale-105"
+            >
+              Read the docs
+            </Link>
           </div>
         </header>
 
-        <main className="mx-auto max-w-5xl px-6">
-          <section className="grid gap-12 pb-20 pt-16 sm:pt-24 lg:grid-cols-[1fr_1.05fr] lg:items-center">
-            <div>
-              <p className={`${mono.className} rise text-sm text-[#5f5d55]`}>
-                peers --node
+        <main>
+          <section className="glow-top relative px-6 pb-16 pt-20 text-center sm:pt-28">
+            <div className="mx-auto max-w-4xl">
+              <p className="rise inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[13px] font-medium text-[#98a2b3]">
+                <span className="live-dot inline-block h-2 w-2 rounded-full bg-[#47cd89]" />
+                Serverless, encrypted, peer-to-peer
               </p>
               <h1
-                className="rise display-hero mt-4 font-semibold"
-                style={{ animationDelay: '100ms' }}
+                className="rise display-hero mx-auto mt-6 max-w-3xl font-semibold"
+                style={{ animationDelay: '110ms' }}
               >
                 Two routers. One line. Zero servers.
               </h1>
               <p
-                className="rise mt-6 max-w-md text-lg leading-relaxed text-[#5f5d55]"
-                style={{ animationDelay: '200ms' }}
+                className="rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[#98a2b3]"
+                style={{ animationDelay: '220ms' }}
               >
-                Peers is a serverless messenger. Every message is encrypted
-                end-to-end and travels peer to peer over a public libp2p mesh.
-                No accounts, no company reading along, no server to seize.
+                Peers is a desktop messenger where every byte is encrypted
+                end-to-end and every message travels peer-to-peer over a public
+                libp2p mesh. No accounts, no company reading along, no server to
+                seize.
               </p>
               <div
-                className="rise mt-8 flex flex-wrap gap-3"
-                style={{ animationDelay: '300ms' }}
+                className="rise mt-9 flex flex-wrap items-center justify-center gap-3"
+                style={{ animationDelay: '330ms' }}
               >
                 <Link
                   href="/docs/peers/running-a-node"
-                  className="rounded-xl bg-[#1c1b17] px-6 py-3.5 font-medium text-[#fafaf7] transition-transform hover:scale-[1.03]"
+                  className="rounded-xl bg-[#ff6b35] px-7 py-3.5 font-semibold text-[#0b0d10] transition-transform hover:scale-105"
                 >
                   Run a node
                 </Link>
                 <Link
                   href="/docs"
-                  className="rounded-xl border border-[#d8d4c7] px-6 py-3.5 font-medium transition-colors hover:border-[#1c1b17]"
+                  className="rounded-xl border border-white/15 px-7 py-3.5 font-semibold text-white transition-colors hover:border-white/40 hover:bg-white/5"
+                >
+                  Read the docs
+                </Link>
+              </div>
+              <div className="rise mx-auto mt-12 max-w-2xl text-left" style={{ animationDelay: '440ms' }}>
+                <NodeLine />
+              </div>
+            </div>
+          </section>
+
+          <section className="border-y border-white/5 bg-[#0e1114]">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-6 py-6">
+              <p className="text-sm text-[#667085]">Built on open protocols</p>
+              {['libp2p', 'Kademlia DHT', 'gossipsub', 'Noise', 'QUIC', 'BIP39'].map((p) => (
+                <span key={p} className={`${mono.className} text-sm text-[#98a2b3]`}>
+                  {p}
+                </span>
+              ))}
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              {metrics.map((m) => (
+                <div key={m.label} className="u-card p-6 text-center">
+                  <p className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                    {m.value}
+                  </p>
+                  <p className="mt-2 text-sm text-[#98a2b3]">{m.label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-6xl px-6 py-10">
+            <p className="text-center text-sm font-semibold text-[#ff8a4d]">Why Peers</p>
+            <h2 className="display-section mx-auto mt-3 max-w-2xl text-center font-semibold">
+              Chat that trusts no one but the people chatting
+            </h2>
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {features.map((f) => (
+                <div key={f.title} className="u-card p-7">
+                  <span className="icon-chip">
+                    <f.icon size={22} strokeWidth={1.8} aria-hidden />
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold tracking-tight">{f.title}</h3>
+                  <p className="mt-2.5 leading-relaxed text-[#98a2b3]">{f.body}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-6xl px-6 py-20">
+            <p className="text-center text-sm font-semibold text-[#ff8a4d]">Capacity</p>
+            <h2 className="display-section mx-auto mt-3 max-w-2xl text-center font-semibold">
+              A node is cheap because chat is small
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-[17px] leading-relaxed text-[#98a2b3]">
+              Every install relays in its tier. Per-peer caps stop one busy peer
+              from consuming every slot on a shared box.
+            </p>
+            <div className="mx-auto mt-12 grid max-w-4xl gap-10 lg:grid-cols-2">
+              <div className="u-card space-y-6 p-7">
+                <h3 className="font-semibold tracking-tight">Reservations per tier</h3>
+                <Bar label="citizen" detail="2 per peer" value={8} max={64} tone="bg-[#667085]" />
+                <Bar label="node" detail="4 per peer" value={64} max={64} tone="bg-[#ff6b35]" />
+                <Bar label="off" detail="PEERS_NO_RELAY=1" value={0} max={64} tone="bg-[#333a44]" />
+              </div>
+              <div className="u-card space-y-6 p-7">
+                <h3 className="font-semibold tracking-tight">Circuits per tier</h3>
+                <Bar label="citizen" detail="2 per peer" value={16} max={64} tone="bg-[#667085]" />
+                <Bar label="node" detail="8 per peer" value={64} max={64} tone="bg-[#ff6b35]" />
+                <Bar label="RAM footprint" detail="of a 2 GB VPS" value={60} max={2048} tone="bg-[#47cd89]" />
+              </div>
+            </div>
+            <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-[#667085]">
+              Reservation, circuit and RAM figures from the node operator guide.
+              RAM bar shows 60 MB against a 2 GB VPS.
+            </p>
+          </section>
+
+          <section className="border-y border-white/5 bg-[#0e1114]">
+            <div className="mx-auto max-w-6xl px-6 py-20">
+              <p className="text-sm font-semibold text-[#ff8a4d]">Cross-NAT in practice</p>
+              <h2 className="display-section mt-3 max-w-2xl font-semibold">
+                Three steps, in order
+              </h2>
+              <div className="mt-10">
+                {[
+                  {
+                    n: '01',
+                    title: 'Run a node',
+                    body: 'One binary, one port, one command. It prints a PEERS_NODES line with its public address.',
+                  },
+                  {
+                    n: '02',
+                    title: 'Share the line',
+                    body: 'Hand the line to both users. They paste it into PEERS_NODES or nodes.json once.',
+                  },
+                  {
+                    n: '03',
+                    title: 'Chat, then go direct',
+                    body: 'Messages flow relayed while hole-punching tries both NATs. On success the node drops out.',
+                  },
+                ].map((s) => (
+                  <div
+                    key={s.n}
+                    className="ledger-row grid gap-1 py-7 sm:grid-cols-[72px_220px_1fr] sm:gap-6"
+                  >
+                    <span className={`${mono.className} text-[15px] text-[#667085]`}>
+                      {s.n}
+                    </span>
+                    <h3 className="text-xl font-semibold tracking-tight">{s.title}</h3>
+                    <p className="max-w-2xl text-[17px] leading-relaxed text-[#98a2b3]">
+                      {s.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="mx-auto max-w-6xl px-6 py-20">
+            <p className="text-center text-sm font-semibold text-[#ff8a4d]">The ecosystem</p>
+            <h2 className="display-section mx-auto mt-3 max-w-2xl text-center font-semibold">
+              Three projects, one mesh
+            </h2>
+            <div className="mt-12 grid gap-5 lg:grid-cols-3">
+              {[
+                {
+                  href: '/docs/peers',
+                  tag: 'App',
+                  name: 'Peers',
+                  body: 'The messenger itself. Tauri desktop app, Rust crypto core, React shell. Keys never leave the backend.',
+                  cta: 'Explore Peers',
+                },
+                {
+                  href: '/docs/dir-api',
+                  tag: 'Service',
+                  name: 'Directory API',
+                  body: 'Live registry of relay nodes on Cloudflare. Signed IDs, adaptive heartbeat cadence. Client fetching planned.',
+                  cta: 'Explore the API',
+                },
+                {
+                  href: '/docs/ptero-egg',
+                  tag: 'Deploy',
+                  name: 'Pterodactyl egg',
+                  body: 'One-click relay nodes on game-server panels. Custom image, public-IP detect, identity-safe reinstalls.',
+                  cta: 'Run a node',
+                },
+              ].map((p) => (
+                <Link key={p.href} href={p.href} className="u-card flex h-full flex-col p-8">
+                  <p className={`${mono.className} text-xs uppercase tracking-[0.15em] text-[#ff8a4d]`}>
+                    {p.tag}
+                  </p>
+                  <h3 className="mt-3 text-2xl font-semibold tracking-tight">{p.name}</h3>
+                  <p className="mt-3 flex-1 leading-relaxed text-[#98a2b3]">{p.body}</p>
+                  <p className="mt-6 font-semibold text-white">{p.cta}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="glow-top border-t border-white/5">
+            <div className="mx-auto max-w-3xl px-6 py-24 text-center">
+              <h2 className="display-hero font-semibold">
+                Run a node. Join the mesh.
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl text-lg text-[#98a2b3]">
+                Ten minutes, one port, about four dollars a month. Two people
+                behind ordinary routers can finally talk.
+              </p>
+              <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/docs/peers/running-a-node"
+                  className="rounded-xl bg-[#ff6b35] px-7 py-3.5 font-semibold text-[#0b0d10] transition-transform hover:scale-105"
+                >
+                  Run a node
+                </Link>
+                <Link
+                  href="/docs"
+                  className="rounded-xl border border-white/15 px-7 py-3.5 font-semibold text-white transition-colors hover:border-white/40 hover:bg-white/5"
                 >
                   Read the docs
                 </Link>
               </div>
             </div>
-            <div className="rise" style={{ animationDelay: '400ms' }}>
-              <NodeLine />
-            </div>
-          </section>
-
-          <section className="border-t border-[#e4e1d6] py-14">
-            <h2 className="max-w-2xl display-section font-semibold">
-              The DHT finds peers. A node makes them reachable.
-            </h2>
-            <div className="mt-8 grid max-w-4xl gap-8 text-[17px] leading-relaxed text-[#5f5d55] sm:grid-cols-3">
-              <p>
-                <strong className="font-semibold text-[#1c1b17]">Discovery</strong> is
-                free. The public IPFS DHT already tells two laptops where each
-                other is.
-              </p>
-              <p>
-                <strong className="font-semibold text-[#1c1b17]">Reachability</strong> is
-                the hard part. Behind home routers, neither side can be dialed
-                at all.
-              </p>
-              <p>
-                <strong className="font-semibold text-[#1c1b17]">Relaying</strong> bridges
-                the gap. Both peers dial one public node, chat, then upgrade to
-                a direct connection.
-              </p>
-            </div>
-          </section>
-
-          <section className="border-t border-[#e4e1d6] py-14">
-            <h2 className="display-section font-semibold">
-              Three steps, in order
-            </h2>
-            <ol className="mt-8">
-              {[
-                {
-                  n: '1',
-                  title: 'Run a node',
-                  body: 'One binary, one port, one command. It idles at 30 to 60 MB of RAM on a Pi, an old laptop, or a four-dollar VPS, and prints a PEERS_NODES line with its public address.',
-                },
-                {
-                  n: '2',
-                  title: 'Share the line',
-                  body: 'Hand the PEERS_NODES line to both users. They paste it into the PEERS_NODES variable or nodes.json once. More than one node is better, since any single node can go down.',
-                },
-                {
-                  n: '3',
-                  title: 'Chat, then go direct',
-                  body: 'Messages flow relayed through the node while DCUtR hole-punching tries both NATs. When it succeeds the node drops out of the path entirely.',
-                },
-              ].map((s) => (
-                <li key={s.n} className="grid gap-2 border-t border-[#e4e1d6] py-7 sm:grid-cols-[64px_220px_1fr] sm:gap-6">
-                  <span className={`${mono.className} text-[15px] text-[#5f5d55]`}>
-                    {s.n}
-                  </span>
-                  <h3 className="text-xl font-semibold tracking-tight">{s.title}</h3>
-                  <p className="max-w-2xl text-[17px] leading-relaxed text-[#5f5d55]">
-                    {s.body}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          <section className="border-t border-[#e4e1d6] py-14">
-            <h2 className="display-section font-semibold">
-              Every install relays, in its tier
-            </h2>
-            <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-[#5f5d55]">
-              A node is not a special build, just a different tier of the same
-              binary. Whether an install actually relays is decided by
-              reachability: an unreachable client advertises slots harmlessly,
-              because nobody can dial it.
-            </p>
-            <div className="mt-8 overflow-x-auto">
-              <table className="tier-table min-w-[560px] text-[15px]">
-                <thead>
-                  <tr>
-                    <th scope="col">Tier</th>
-                    <th scope="col">Who</th>
-                    <th scope="col">Reservations</th>
-                    <th scope="col">Circuits</th>
-                    <th scope="col">Per circuit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tiers.map((t) => (
-                    <tr key={t.name}>
-                      <td className={`${mono.className} font-medium`}>{t.name}</td>
-                      <td className="text-[#5f5d55]">{t.who}</td>
-                      <td>{t.reservations}</td>
-                      <td>{t.circuits}</td>
-                      <td>{t.cap}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="border-t border-[#e4e1d6] py-14">
-            <h2 className="display-section font-semibold">
-              The projects
-            </h2>
-            <div className="mt-4">
-              {projects.map((p) => (
-                <Link key={p.href} href={p.href} className="ledger-row grid gap-1 py-7 sm:grid-cols-[200px_1fr] sm:gap-6">
-                  <p className="text-[15px] text-[#5f5d55]">{p.kind}</p>
-                  <div>
-                    <h3 className="text-2xl font-semibold tracking-tight">{p.name}</h3>
-                    <p className="mt-2 max-w-2xl text-[17px] leading-relaxed text-[#5f5d55]">
-                      {p.body}
-                    </p>
-                  </div>
-
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="border-t border-[#e4e1d6] py-16">
-            <h2 className="max-w-2xl display-section font-semibold">
-              Ten minutes, one port, and two people can talk across the world.
-            </h2>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/docs/peers/running-a-node"
-                className="rounded-xl bg-[#d9480f] px-6 py-3.5 font-medium text-white transition-transform hover:scale-[1.03]"
-              >
-                Run a node
-              </Link>
-              <Link
-                href="/docs"
-                className="rounded-xl border border-[#d8d4c7] px-6 py-3.5 font-medium transition-colors hover:border-[#1c1b17]"
-              >
-                Read the docs
-              </Link>
-            </div>
           </section>
         </main>
 
-        <footer className="border-t border-[#e4e1d6]">
-          <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-8 text-[15px] text-[#5f5d55] sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-semibold text-[#1c1b17]">PeersTech</p>
-            <nav className="flex flex-wrap gap-x-6 gap-y-2">
-              <Link href="/docs" className="transition-colors hover:text-[#1c1b17]">
+        <footer className="border-t border-white/5">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-5 px-6 py-10 sm:flex-row">
+            <div className="flex items-center gap-2.5">
+              <span
+                aria-hidden
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ff6b35] text-sm font-bold text-[#0b0d10]"
+              >
+                P
+              </span>
+              <span className="font-semibold tracking-tight">PeersTech</span>
+            </div>
+            <nav className="flex items-center gap-7 text-sm text-[#98a2b3]">
+              <Link href="/docs" className="transition-colors hover:text-white">
                 Docs
               </Link>
               <Link
                 href="https://github.com/PeersTech/Peers"
-                className="transition-colors hover:text-[#1c1b17]"
+                className="transition-colors hover:text-white"
               >
                 Peers
               </Link>
               <Link
                 href="https://github.com/PeersTech/dir-api"
-                className="transition-colors hover:text-[#1c1b17]"
+                className="transition-colors hover:text-white"
               >
                 Directory
               </Link>
               <Link
                 href="https://github.com/PeersTech/ptero-egg"
-                className="transition-colors hover:text-[#1c1b17]"
+                className="transition-colors hover:text-white"
               >
                 Egg
               </Link>
             </nav>
-            <p className="text-sm">No accounts. No servers. No databases.</p>
+            <p className="text-xs text-[#667085]">No accounts. No servers. No databases.</p>
           </div>
         </footer>
       </div>

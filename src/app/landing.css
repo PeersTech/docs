@@ -1,59 +1,73 @@
-/* PeersTech landing: operator's field manual. Paper, ink, one signal color. */
+/* PeersTech landing: dark, Untitled UI patterns, low-end first.
+   No backdrop blur, no blend modes, no giant blurs, no marquee.
+   Motion is transform/opacity only, one load sequence, reduced-motion safe. */
 
 .landing {
-  --paper: #fafaf7;
-  --ink: #1c1b17;
-  --muted: #5f5d55;
-  --line: #e4e1d6;
-  --signal: #d9480f;
-  --machine: #111110;
-  --machine-ink: #d8d5c9;
-  background: var(--paper);
+  --bg: #0b0d10;
+  --surface: #13161b;
+  --edge: rgba(255, 255, 255, 0.08);
+  --ink: #f5f7fa;
+  --muted: #98a2b3;
+  --faint: #667085;
+  --accent: #ff6b35;
+  --accent-ink: #ff8a4d;
+  --green: #47cd89;
+  background: var(--bg);
   color: var(--ink);
   overflow-x: clip;
   -webkit-font-smoothing: antialiased;
 }
 
 .landing ::selection {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-/* Fluid display type: scales smoothly 320px to 1920px, no breakpoint jumps */
-.display-hero {
-  font-size: clamp(2.75rem, 1.4rem + 5.2vw, 4.5rem);
-  line-height: 1.04;
-  letter-spacing: -0.02em;
-}
-.display-section {
-  font-size: clamp(1.75rem, 1.2rem + 2.4vw, 2.75rem);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-
-/* Film grain: kills the flat digital look, 2 percent overlay */
-.grain::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='30' height='30' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  background: var(--accent);
+  color: #0b0d10;
 }
 
 .landing a:focus-visible,
 .landing button:focus-visible {
-  outline: 2px solid var(--signal);
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
-/* Dial sequence: multiaddr segments light up in order on load */
+/* Fluid display type */
+.display-hero {
+  font-size: clamp(2.6rem, 1.3rem + 5vw, 4.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+.display-section {
+  font-size: clamp(1.7rem, 1.15rem + 2.2vw, 2.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+/* Single load entrance */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  opacity: 0;
+  animation: rise-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* Dial sequence on the hero line */
 .dial-seg {
-  opacity: 0.28;
-  transition: opacity 0.45s ease;
+  opacity: 0.25;
+  transition: opacity 0.4s ease;
 }
 .dial-seg.lit {
   opacity: 1;
@@ -65,72 +79,89 @@
   }
 }
 
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.rise {
-  opacity: 0;
-  animation: rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-@media (prefers-reduced-motion: reduce) {
-  .rise {
-    opacity: 1;
-    animation: none;
-  }
+/* Cheap static glow: radial gradient, no blur filter, no animation */
+.glow-top {
+  background: radial-gradient(
+    ellipse 60% 45% at 50% 0%,
+    rgba(255, 107, 53, 0.09),
+    transparent 70%
+  );
 }
 
-/* Terminal inset: the machine's voice against the manual's paper */
+/* Terminal panel */
 .term {
-  background: var(--machine);
-  color: var(--machine-ink);
+  background: var(--surface);
+  border: 1px solid var(--edge);
   border-radius: 14px;
-  box-shadow: 0 30px 70px -30px rgba(28, 27, 23, 0.45);
 }
 
-/* Ledger rows for projects */
+/* Cards */
+.u-card {
+  border: 1px solid var(--edge);
+  background: var(--surface);
+  border-radius: 14px;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+.u-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 107, 53, 0.4);
+}
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  border: 1px solid var(--edge);
+  background: rgba(255, 107, 53, 0.08);
+  color: var(--accent-ink);
+}
+
+/* Ledger rows */
 .ledger-row {
-  border-top: 1px solid var(--line);
-  transition: background 0.25s ease;
+  border-top: 1px solid var(--edge);
+  transition: background 0.2s ease;
 }
 .ledger-row:last-child {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--edge);
 }
 .ledger-row:hover {
-  background: rgba(28, 27, 23, 0.035);
+  background: rgba(255, 255, 255, 0.025);
 }
 
+/* Bars: pure divs, width set inline, no JS */
+.bar-track {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.bar-fill {
+  border-radius: 9999px;
+}
 
-/* Copy button feedback */
+/* Copy button */
 .copy-btn {
   transition:
     background 0.2s ease,
-    color 0.2s ease,
-    transform 0.15s ease;
+    transform 0.12s ease;
 }
 .copy-btn:active {
-  transform: scale(0.96);
-}
-.copy-btn.rung {
-  box-shadow: 0 0 0 3px rgba(217, 72, 15, 0.35);
+  transform: scale(0.97);
 }
 
-/* Live dot: the only always-on motion, it reports state */
+/* Live dot */
 @keyframes ping-soft {
   0% {
-    box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.45);
+    box-shadow: 0 0 0 0 rgba(71, 205, 137, 0.5);
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(46, 160, 67, 0);
+    box-shadow: 0 0 0 8px rgba(71, 205, 137, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(46, 160, 67, 0);
+    box-shadow: 0 0 0 0 rgba(71, 205, 137, 0);
   }
 }
 .live-dot {
@@ -140,25 +171,4 @@
   .live-dot {
     animation: none;
   }
-}
-
-/* Tier table */
-.tier-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-.tier-table th,
-.tier-table td {
-  border-top: 1px solid var(--line);
-  padding: 0.85rem 0.25rem;
-  text-align: left;
-  vertical-align: baseline;
-}
-.tier-table thead th {
-  border-top: none;
-  color: var(--muted);
-  font-weight: 500;
-}
-.tier-table tbody tr:last-child td {
-  border-bottom: 1px solid var(--line);
 }
