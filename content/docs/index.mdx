@@ -5,7 +5,7 @@ description: Welcome to the PeersTech documentation
 
 # PeersTech
 
-A set of tools for decentralized communication. No central servers. No accounts. No databases.
+Tools for decentralized communication. No central servers. No accounts. No databases.
 
 ## Projects
 
@@ -18,7 +18,7 @@ A set of tools for decentralized communication. No central servers. No accounts.
   </Card>
   <Card>
     ### Directory API
-    Node registry and discovery. Clients find relay nodes without pasting addresses.
+    A live registry of relay nodes. Client integration is planned, not yet wired.
 
     [Get Started](/docs/dir-api)
   </Card>
@@ -38,19 +38,19 @@ graph TB
         A[Peers App]
         B[Peers App]
     end
-    
+
     subgraph P2P Network
         C[libp2p Mesh]
         D[Kademlia DHT]
         E[Gossipsub]
     end
-    
+
     subgraph Relay Nodes
         F[Node 1]
         G[Node 2]
         H[Node N]
     end
-    
+
     A -->|E2E Encrypted| C
     B -->|E2E Encrypted| C
     C --> D
@@ -58,20 +58,32 @@ graph TB
     F --> C
     G --> C
     H --> C
-    
-    subgraph Discovery
+
+    subgraph Manual Setup
+        O[Operator copies PEERS_NODES line]
+    end
+
+    F --> O
+    O --> A
+    O --> B
+
+    subgraph Directory
         I[Directory API]
     end
-    
-    A -->|Find Nodes| I
-    B -->|Find Nodes| I
-    F -->|Heartbeat| I
-    G -->|Heartbeat| I
-    H -->|Heartbeat| I
+
+    F -->|Register + Heartbeat| I
+    G -->|Register + Heartbeat| I
+    H -->|Register + Heartbeat| I
+    A -.-|Planned: fetch nodes| I
 ```
+
+Peers find each other over the public IPFS DHT. That solves discovery. Relay nodes solve reachability: both NAT'd peers dial the same node, reserve a circuit, and chat. DCUtR then tries to upgrade them to a direct connection.
+
+Today, an operator copies the `PEERS_NODES=` line from `peers --node` and hands it to both users, who paste it into `PEERS_NODES` or `nodes.json`. The Directory API already accepts registrations and heartbeats from nodes. Client fetching is the planned next step, not yet wired.
 
 ## Design principles
 
 - Self-certifying identities. Ed25519 keys embedded in peer IDs.
+- Serverless by default. No canonical node list ships with Peers, since that would make those nodes a central dependency.
 - NAT traversal through Circuit Relay v2 and DCUtR hole punching.
-- Runs on Raspberry Pi, old laptops, and cheap VPSs.
+- Runs on Raspberry Pi, old laptops, and cheap VPSs. A node uses 30 to 60 MB of RAM.

@@ -5,29 +5,30 @@ description: Node registry and discovery service
 
 # Directory API
 
-A Cloudflare Worker (Hono + D1) that answers "which backbone nodes are alive right now?" Clients find relay nodes without pasting addresses. Discovery only. No message traffic touches this.
+A Cloudflare Worker (Hono + D1) that answers "which backbone nodes are alive right now?" Nodes register with signed peer IDs and heartbeat to stay listed. Clients fetch the list instead of pasting addresses by hand.
 
 Production URL: https://directory.peers.dpdns.org
 
-## Purpose
+## Status
 
-When a user opens Peers, they need to find relay nodes to connect to. The Directory API maintains a registry of active nodes and serves them to clients on demand.
+The service is live and the protocol is stable. Peers clients do not call it yet. Today, operators copy the `PEERS_NODES=` line from `peers --node` and hand it to users by hand. The intended flow once wired: fetch `/v1/nodes`, use `peersNodes` as `PEERS_NODES` or split it on commas into `nodes.json`.
+
+Peer discovery itself needs no directory. Finding *where a peer is* already works over the public IPFS DHT. This service solves the narrower problem: finding *relay nodes with public addresses* so two NAT'd peers have something to dial.
 
 ## Trust model
 
-- A libp2p peer ID embeds its own Ed25519 public key. Every request is verified against the key inside the ID.
-- The multiaddr must terminate at /p2p/same peer ID. Address poisoning is structurally impossible.
-- Nonces are consumed atomically (DELETE ... RETURNING). Replays fail.
-- Clients still dial-and-verify locally. A hostile directory can degrade onboarding, never read traffic.
+- A libp2p peer ID embeds its own Ed25519 public key. Every request is verified against the key inside the ID. No accounts, no trust on first use.
+- Every multiaddr must terminate at `/p2p/<same peer id>` that signed. Address poisoning is structurally impossible.
+- Nonces are consumed atomically (`DELETE ... RETURNING`). Replays fail.
+- Clients still dial and verify locally. A hostile directory can degrade onboarding, never read traffic. There is no traffic here to read.
 
 ## Scale
 
 | Metric | Value |
 |---|---|
-| Write volume | 480k writes/day at 10k nodes |
+| Write volume | Heartbeats only, adaptive cadence (30 min default): 10k nodes is about 480k writes/day |
 | Storage | 10k rows is a rounding error for D1 |
-| Heartbeat cadence | Adaptive (30 min default, grows with fleet) |
-| Free tier fit | ~2k nodes |
+| Free tier fit | About 2k nodes |
 
 ## Tech stack
 

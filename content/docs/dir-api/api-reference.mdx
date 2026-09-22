@@ -5,9 +5,13 @@ description: Endpoint documentation for the Directory API
 
 # API reference
 
-All endpoints return JSON with `{"ok": boolean, "protocol": 1, ...}`.
+All endpoints return JSON with `{ok: boolean, protocol: 1, ...}`.
 
-Every response carries heartbeatAfterSec. The server slows the fleet's heartbeat cadence as it grows.
+Every response carries `heartbeatAfterSec`. The server slows the fleet's heartbeat cadence as it grows, which keeps D1 write volume inside plan limits.
+
+Addresses are `multiaddrs`: comma-separated full multiaddrs, each ending in `/p2p/<same peer id>`. That is the same format as `PEERS_NODES`, so the list endpoint output drops straight into client config.
+
+Tiers are the Peers relay tiers: `citizen`, `node`, or `off`. Anything else is rejected with 400. Absent means `node`.
 
 ## Health check
 
@@ -27,7 +31,7 @@ Response:
 
 ## Challenge
 
-Get a single-use nonce for registration.
+Get a single-use nonce for registration. Expires after 5 minutes.
 
 ```
 GET /v1/challenge?peerId={peerId}
@@ -55,7 +59,7 @@ Errors:
 
 ## Register
 
-Register a node with a signed challenge nonce.
+Register a node with a signed challenge nonce. The nonce is consumed atomically, so each challenge works exactly once. Tier is checked before the nonce is consumed, so a bad tier does not burn a challenge.
 
 ```
 POST /v1/register
@@ -68,7 +72,7 @@ Body:
   "peerId": "12D3KooW...",
   "nonce": "a1b2c3d4e5f6...",
   "sig": "base64-ed25519-signature",
-  "multiaddr": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...",
+  "multiaddrs": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...,...",
   "region": "us-east-1",
   "tier": "node"
 }
@@ -94,12 +98,13 @@ Errors:
 - 400. body must be json
 - 400. peerId, nonce, sig required
 - 400. signature invalid
+- 400. tier must be citizen, node, or off
 - 400. nonce unknown, expired or already used
-- 400. multiaddr must end in /p2p/same peer id
+- 400. multiaddrs must be comma-separated addrs ending in /p2p/same peer id
 
 ## Heartbeat
 
-Keep a node alive. Inside half the cadence, this is a free ack (write-skipped).
+Keep a node alive. Inside half the told cadence, this is a free ack (write-skipped) rather than a write. Unknown nodes may bootstrap straight into a heartbeat, but then they must supply addresses.
 
 ```
 POST /v1/heartbeat
@@ -112,8 +117,9 @@ Body:
   "peerId": "12D3KooW...",
   "ts": 1700000000000,
   "sig": "base64-ed25519-signature",
-  "multiaddr": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...",
-  "region": "us-east-1"
+  "multiaddrs": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...,...",
+  "region": "us-east-1",
+  "tier": "node"
 }
 ```
 
@@ -122,6 +128,8 @@ Signature message:
 ```
 peers-directory:v1:heartbeat:{peerId}:{timestamp}
 ```
+
+The timestamp must be within the skew window (15 minutes by default), which kills replays.
 
 Response:
 
@@ -145,11 +153,12 @@ Or if write-skipped:
 Errors:
 
 - 400. signature invalid or clock too far off
-- 400. unknown node: multiaddr ending in /p2p/id required
+- 400. tier must be citizen, node, or off
+- 400. unknown node: multiaddrs ending in /p2p/id required
 
 ## List nodes
 
-Get fresh (recently seen) nodes with keyset pagination.
+Get fresh (recently seen) nodes with keyset pagination. The `peersNodes` field is the whole page as one comma-joined string. Paste it directly as `PEERS_NODES`, or split on commas into `nodes.json`.
 
 ```
 GET /v1/nodes?limit={limit}&cursor={cursor}
@@ -160,7 +169,7 @@ Parameters:
 | Name | Type | Default | Description |
 |---|---|---|---|
 | limit | number | 200 | Max nodes per page (1-500) |
-| cursor | string | none | Opaque pagination cursor from previous response |
+| cursor | string | none | Opaque pagination cursor from the previous response |
 
 Response:
 
@@ -169,9 +178,10 @@ Response:
   "ok": true,
   "protocol": 1,
   "heartbeatAfterSec": 1800,
+  "peersNodes": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...,...",
   "nodes": [
     {
-      "multiaddr": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...",
+      "multiaddrs": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...,...",
       "peerId": "12D3KooW...",
       "lastSeen": 1700000000000,
       "region": "us-east-1",
@@ -182,3 +192,5 @@ Response:
   "directoriesHint": ["https://directory.peers.dpdns.org"]
 }
 ```
+
+Newest first. The cursor is a composite `lastSeen:peerId` pair, so rows sharing a timestamp never straddle or repeat across pages.

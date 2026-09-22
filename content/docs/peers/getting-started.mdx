@@ -8,8 +8,7 @@ description: Install and run Peers in development
 ## Prerequisites
 
 - Node.js 20+ with npm
-- A Rust toolchain. See [Tauri prerequisites](https://tauri.app/start/prerequisites/).
-- Linux: webkit2gtk 4.1, libgtk-3, librsvg, patchelf
+- A Rust toolchain. See [Tauri prerequisites](https://tauri.app/start/prerequisites/). On Linux that means webkit2gtk 4.1, libgtk-3, librsvg and patchelf, plus the usual build tools.
 
 ## Run in development
 
@@ -27,7 +26,7 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-Bundles installers into backend/target/release/bundle.
+Bundles installers into `backend/target/release/bundle`.
 
 ## Regenerate app icons
 
@@ -42,25 +41,32 @@ Draws the Peers logo. Pure Node, zero dependencies.
 Run the backend as an always-on routing/relay node with no GUI:
 
 ```sh
-./peers --node
+cd backend
+cargo build --release
+./target/release/peers --node
 ```
 
-This works well on Raspberry Pi, old laptops, or cheap VPSs that serve as backbone nodes.
+On a 1 GB Pi the release link may run out of memory. Build on a bigger machine with the same architecture and copy the binary across, or add swap.
+
+This fits Raspberry Pi, old laptops, or cheap VPSs that serve as backbone nodes. A node uses roughly 30 to 60 MB of RAM. See the running-a-node guide for firewall, announce addresses, systemd and capacity.
 
 ### Node identity
 
-On first boot, a node identity is auto-generated and stored at:
+On first boot, a node identity is generated and stored with `0600` permissions at:
 
-- Linux: ~/.config/peers/node_identity.json
-- macOS: ~/Library/Application Support/peers/node_identity.json
-- Windows: %APPDATA%\peers\node_identity.json
+- Linux: `~/.config/peers/node_identity.json`
+- macOS: `~/Library/Application Support/peers/node_identity.json`
+- Windows: `%APPDATA%\peers\node_identity.json`
+
+Keep that file. Deleting it changes the node's peer ID, and every client pointing at the old ID stops connecting.
 
 ### Environment variables
 
-| Variable | Default | Description |
+Peers reads exactly four variables. There is no `PEERS_PUBLIC_IP` in the binary. That name only exists in the Pterodactyl egg, which translates it into `PEERS_ANNOUNCE` before launch.
+
+| Variable | Default | Purpose |
 |---|---|---|
-| PEERS_PORT | 4001 | Listen port (TCP + UDP) |
-| PEERS_PUBLIC_IP | auto-detected | Public IP for client dialing |
-| PEERS_ANNOUNCE | none | Full multiaddr override |
-| PEERS_NODES | none | Upstream nodes to chain to |
-| PEERS_NO_RELAY | none | Set to 1 to disable relaying |
+| `PEERS_NODES` | none | Comma-separated full multiaddrs with `/p2p/<id>`. Takes precedence over `nodes.json`. |
+| `PEERS_PORT` | `4001` for `--node`, ephemeral for GUI | TCP and QUIC port to bind. |
+| `PEERS_ANNOUNCE` | none | Comma-separated public multiaddrs without `/p2p/<id>`. The node appends its own ID. |
+| `PEERS_NO_RELAY` | none | Presence disables relaying entirely. The value is ignored. |

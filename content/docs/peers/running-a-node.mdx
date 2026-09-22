@@ -5,136 +5,248 @@ description: Set up an always-on Peers relay node
 
 # Running a node
 
-A Peers node lets two people behind ordinary home routers talk to each other. Both peers dial the node, reserve a circuit through it, and their messages flow. Then DCUtR hole-punches a direct connection and the node drops out of the path.
+A node is a Peers process with a public address that other peers can dial. It is what makes chat work between two people who are both behind home routers, which is to say, between almost any two people in different countries.
 
-## Why run a node?
+## Why you need one
 
-- Backbone infrastructure for cross-NAT communication
-- Low resource usage: 10-20 MB RAM idle in headless mode
-- Community contribution that strengthens the P2P network
+Peers is serverless, but no central server does not mean no machines in the middle. Three different jobs get confused with each other:
 
-## Prerequisites
+| Job | What it means | Who can do it |
+|---|---|---|
+| Discovery | Finding where a peer is | The public IPFS DHT, free, already working |
+| Reachability | Being dialable at all | Impossible behind a typical home router |
+| Relaying | Carrying traffic when neither side is dialable | Only a machine with a public address |
 
-- A VPS, Raspberry Pi, old laptop, or phone on a charger
-- Public IP address (or ability to forward ports)
-- Linux recommended (Ubuntu/Debian)
+The trap is that DHT bootstrap is not relaying. Peers already talks to the public IPFS bootstrap nodes, and they will happily help you find someone, but they will not forward your traffic. So two NAT'd laptops can discover each other and still be unable to connect.
 
-## Quick start
+A node fixes that. Both peers dial the node, each reserves a circuit slot through it, and their messages flow. Then DCUtR hole-punching upgrades the connection to direct whenever the two NATs allow it, and the node drops out of the path entirely. It is a switchboard, not a bottleneck.
 
-### 1. Build from source
+The node never reads anything. Messages are sealed end-to-end before they touch the wire. It sees ciphertext and routing metadata, nothing else.
+
+You do not need one if both peers are on the same LAN, or either peer has a public IP, port forwarding, or open IPv6. You do if both of you are on ordinary home or mobile connections. If you are unsure, unlock Peers and look at the connectivity line next to the channel name. `no relay node configured` means cross-NAT chat will not work yet.
+
+## What it costs
+
+A node is cheap because chat is small. The lowest tier of any VPS provider is plenty (about $4/month), and a Raspberry Pi on your home connection works if you can port-forward.
+
+A node uses roughly 30 to 60 MB of RAM and negligible CPU. Bandwidth is the only real variable, and only for relayed traffic that has not yet upgraded to direct.
+
+## Setup
+
+### 1. Build the binary
+
+On the node machine (or build locally and copy the binary over):
 
 ```sh
-# Install dependencies (Ubuntu/Debian)
-sudo apt update
-sudo apt install -y build-essential pkg-config \
-    libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev \
-    librsvg2-dev patchelf libxdo-dev libssl-dev
-
-# Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-source ~/.cargo/env
-
-# Clone and build
 git clone https://github.com/PeersTech/Peers.git
 cd Peers/backend
 cargo build --release
-
-# The binary is at target/release/peers
 ```
 
-### 2. Configure the port
+The binary lands at `backend/target/release/peers`.
+
+On a 1 GB Pi, `cargo build --release` may run out of memory while linking. Build on a bigger machine with the same architecture and copy the binary across, or add swap.
+
+Running on Pterodactyl? There is a ready-made egg that does all of this for you, including the public-address handling in step 3. See the ptero-egg docs.
+
+### 2. Open the firewall
+
+The node listens on a TCP and a QUIC (UDP) port, 4001 by default. Allow both protocols:
 
 ```sh
-# Open firewall (TCP + UDP)
 sudo ufw allow 4001/tcp
 sudo ufw allow 4001/udp
 ```
 
-### 3. Start the node
+If you set `PEERS_PORT` (below), open that port instead.
+
+On a VPS, do the same in the provider's own firewall console. That one is separate from `ufw` and is the usual reason a node looks up but is unreachable.
+
+If the node is on your home network, forward the same port to it on your router.
+
+### 3. Run it
 
 ```sh
 ./peers --node
 ```
 
-### 4. Verify
-
-Look for these lines:
+You will see something like:
 
 ```
-peers node peer id: 12D3KooW...
-announcing: /ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...
-  -> PEERS_NODES=/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...
+peers node peer id: 12D3KooWQ7xJ4kR2mN8pL5vX3wY6zA9bC1dE4fG7hJ0kL2mN5pQ
+peers node identity: /home/you/.config/peers/node_identity.json
+listening: /ip4/203.0.113.7/tcp/4001/p2p/12D3KooWQ7xJ4kR2mN8pL5vX3wY6zA9bC1dE4fG7hJ0kL2mN5pQ
+  → PEERS_NODES=/ip4/203.0.113.7/tcp/4001/p2p/12D3KooWQ7xJ4kR2mN8pL5vX3wY6zA9bC1dE4fG7hJ0kL2mN5pQ
+listening (local only): /ip4/127.0.0.1/tcp/4001/p2p/12D3KooW…
 peers node is up.
-reachability: public (peers dialed us successfully)
 ```
 
-- public. Working.
-- PRIVATE. Firewall issue. No clients can use this node.
-- unknown. Not enough peers yet. Wait a few minutes.
+Copy the `PEERS_NODES=` line that shows a public address. Lines marked `local only` (`127.x`, `0.0.0.0`) are real listeners but useless to anyone else. Handing one of those to a client is the most common setup mistake.
 
-## Client configuration
+The node's identity is generated on first run and stored with `0600` permissions at `<config>/peers/node_identity.json`. Keep that file. Deleting it changes the node's peer ID, and every client pointing at the old ID stops connecting.
 
-Point clients at your node by creating `config/peers/nodes.json`:
+### On a cloud VM
+
+Most cloud instances do not have their public IP on the network interface. The provider NATs it. The node can only see the private address, so it will print something like `/ip4/172.31.4.9/tcp/4001` and never mention your real address. Handing that line to a client cannot work.
+
+Tell the node its public address with `PEERS_ANNOUNCE`:
+
+```sh
+PEERS_ANNOUNCE=/ip4/203.0.113.7/tcp/4001 ./peers --node
+```
+
+It then prints the address clients actually need:
+
+```
+announcing: /ip4/203.0.113.7/tcp/4001/p2p/12D3KooW…
+  → PEERS_NODES=/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW…
+```
+
+With `PEERS_ANNOUNCE` set, private listener addresses are demoted to `local only`, so there is only one line to copy.
+
+To announce both transports, pass both:
+
+```sh
+PEERS_ANNOUNCE=/ip4/203.0.113.7/tcp/4001,/ip4/203.0.113.7/udp/4001/quic-v1
+```
+
+### Node environment variables
+
+Peers reads exactly four variables. Anything else (such as `PEERS_PUBLIC_IP` in the Pterodactyl egg) is translated into one of these before the binary starts.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PEERS_PORT` | `4001` for `--node`, ephemeral for GUI | TCP and QUIC port to bind. Must stay fixed on a node, clients store it. |
+| `PEERS_ANNOUNCE` | none | Comma-separated public multiaddrs, without `/p2p/<id>`. Required on NAT'd/cloud hosts. |
+| `PEERS_NODES` | none | Other nodes to dial and reserve relay slots on, so nodes can chain. |
+| `PEERS_NO_RELAY` | none | Presence disables relaying entirely. Overrides `--node`. Do not set it on a node. |
+
+### 4. Point clients at the node
+
+Both you and the person you want to talk to do this, with the same value.
+
+Either set the environment variable:
+
+```sh
+export PEERS_NODES=/ip4/203.0.113.7/tcp/4001/p2p/12D3KooWQ7x…
+```
+
+Or write `<config>/peers/nodes.json` (no env var needed, survives reboots):
 
 ```json
-["/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW..."]
+["/ip4/203.0.113.7/tcp/4001/p2p/12D3KooWQ7xJ4kR2mN8pL5vX3wY6zA9bC1dE4fG7hJ0kL2mN5pQ"]
 ```
 
 | Platform | Path |
 |---|---|
-| Linux | ~/.config/peers/nodes.json |
-| macOS | ~/Library/Application Support/peers/nodes.json |
-| Windows | %APPDATA%\peers\nodes.json |
+| Linux | `~/.config/peers/nodes.json` |
+| macOS | `~/Library/Application Support/peers/nodes.json` |
+| Windows | `%APPDATA%\peers\nodes.json` |
 
-Both people who want to talk must point at the same node.
+`PEERS_NODES` takes precedence when both are present. Multiple nodes are comma-separated in the env var, or extra array entries in the JSON. More than one is better, because any single node can go down.
 
-## Systemd service
+If you launch Peers from a desktop icon it will not see a shell `export`. Use `nodes.json` instead.
 
-Create /etc/systemd/system/peers-node.service:
+Restart Peers on both machines.
+
+### 5. Verify
+
+In the app, the line beside the channel name should change from `no relay node configured` to `N peers · via relay`, or `· direct` once hole-punching succeeds. Hover it for listen addresses, external addresses and reservation count.
+
+On the node, watch for:
+
+```
+peer connected: 12D3KooW…
+relay reservation granted to 12D3KooW…
+reachability: public (peers dialed us successfully)
+```
+
+One line per client. If you see `peer connected` but never `relay reservation granted`, the client reached the node but could not reserve a slot. Check that the node was started with `--node` and is not at capacity.
+
+The `reachability:` line is an AutoNAT result: other peers were asked to dial this node back, and it reports whether they got through. This is a measurement, not a guess. A node that prints `reachability: PRIVATE` is not reachable from the outside no matter how healthy the process looks, and no client will ever be able to use it. `unknown` is not a failure: it means too few peers were around to probe with yet.
+
+Clients re-establish relay reservations automatically. If a node goes down, each client retries with an exponential backoff, starting at 10 seconds and capping at 5 minutes. You can restart a node freely, as long as its peer ID and port do not change. Keep `node_identity.json` and pin `PEERS_PORT`.
+
+## Keeping it running
+
+`/etc/systemd/system/peers-node.service`:
 
 ```ini
 [Unit]
-Description=Peers Relay Node
-After=network.target
+Description=Peers relay node
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=peers
-WorkingDirectory=/home/peers
-ExecStart=/home/peers/peers --node
+Environment=PEERS_PORT=4001
+# On a cloud VM, uncomment with your public IP. The instance cannot see it.
+#Environment=PEERS_ANNOUNCE=/ip4/203.0.113.7/tcp/4001
+ExecStart=/usr/local/bin/peers --node
 Restart=always
 RestartSec=10
-Environment=PEERS_PORT=4001
+
+# The node holds no user secrets. It only routes ciphertext, so it can be
+# locked down hard.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/peers/.config/peers
 
 [Install]
 WantedBy=multi-user.target
 ```
 
 ```sh
-sudo systemctl daemon-reload
+sudo useradd -r -m -d /home/peers peers
+sudo cp backend/target/release/peers /usr/local/bin/
 sudo systemctl enable --now peers-node
+journalctl -u peers-node -f
 ```
 
-## Environment variables
+## Capacity
 
-| Variable | Default | Description |
-|---|---|---|
-| PEERS_PORT | 4001 | Listen port (TCP + UDP) |
-| PEERS_PUBLIC_IP | auto | Public IP for client dialing |
-| PEERS_ANNOUNCE | none | Full multiaddr override (advanced) |
-| PEERS_NODES | none | Upstream nodes to chain to |
-| PEERS_NO_RELAY | none | Set to 1 to disable relaying |
+Every Peers install can relay. A node is not a special build, just a different tier of the same binary. Whether an install actually relays is decided by reachability, not configuration: an unreachable client can advertise slots harmlessly, because nobody can dial it to use them.
+
+Circuit relay slots (how many clients can reserve circuits through this node):
+
+| Tier | Reservations | Circuits | Per circuit | Who |
+|---|---|---|---|---|
+| `citizen` | 8 (2/peer) | 16 (2/peer) | 16 MiB | Every GUI client |
+| `node` | 64 (4/peer) | 64 (8/peer) | 128 MiB | `--node` |
+| `off` | 0 | 0 | none | `PEERS_NO_RELAY=1` |
+
+The per-peer limits matter more than the totals: they stop one busy peer consuming every slot on a shared box.
+
+Set `PEERS_NO_RELAY=1` on a metered or battery-powered machine to forward nothing.
+
+Raw connection limits (how many TCP/QUIC sockets the node holds):
+
+| Tier | Pending in/out | Established in/out | Per peer | Who |
+|---|---|---|---|---|
+| `client` | 16 / 32 | 64 / 128 | 8 | GUI clients |
+| `node` | 64 / 64 | 512 / 256 | 8 | `--node` |
+
+These exist because relay caps bound circuits, connections already accepted and then forwarded. A peer that opens sockets but never asks for a circuit can exhaust file descriptors without touching the relay tier at all. These caps are deliberately higher than the relay tier, so the relay budget stays the binding constraint.
 
 ## Troubleshooting
 
-Node starts but no client can connect.
+The node only prints private addresses (`10.x`, `172.16-31.x`, `192.168.x`). It is behind NAT. Set `PEERS_ANNOUNCE=/ip4/<public-ip>/tcp/4001` and restart. Do not hand the private line to a remote client. It can never work.
 
-Check the reachability line. If PRIVATE, the port is not open. Check both ufw and cloud security groups.
+Client still says `no relay node configured`. `PEERS_NODES` was not visible to the app. If you launched Peers from a desktop icon it will not see a shell `export`. Use `nodes.json` instead.
 
-Node exits with library error.
+Client says `connecting` and never advances. The node is not reachable from the outside. From another machine: `nc -vz <ip> 4001`. If that fails, it is the firewall. Check the provider's console as well as `ufw`.
 
-Missing webkit/GTK runtime libraries. Build from source or use the Pterodactyl egg.
+Reservations granted, but messages do not arrive. Both clients must point at the same node for it to bridge them. Confirm the peer ID in both configs matches the node's.
 
-peer connected but never relay reservation granted.
+It worked, then stopped after a reboot. Either `node_identity.json` was lost, so the node has a new peer ID (restore the file or redistribute the new `PEERS_NODES` line), or the port moved (pin it with `PEERS_PORT=4001`).
 
-Node at capacity (64 reservations). Add a second node.
+Stuck on `via relay`, never `direct`. Normal. DCUtR cannot punch through every NAT combination. Symmetric NAT on both ends defeats it. Chat still works. It just stays relayed.
+
+The node logs `reachability: PRIVATE`. AutoNAT asked other peers to dial this node and none of them got through. The process is fine. The packets are not arriving. In order of likelihood: the provider's security group or firewall is closed, the node is behind NAT and needs `PEERS_ANNOUNCE`, or the announced port does not match `PEERS_PORT`. No client can use the node until this reads `public`.
+
+Reachability says `unreachable` in the client UI. AutoNAT confirmed the client cannot be dialed and it holds no relay reservation, so nothing can reach it at all. Configure `PEERS_NODES`. This is the state the whole relay mechanism exists to fix.
+
+Clients keep reconnecting to the node every few seconds. They should not: retries back off exponentially to a 5-minute ceiling. Rapid reconnects mean the reservation is being granted and then lost, which usually means the node is at capacity (add a second node) or an intermediate firewall is dropping idle connections.

@@ -28,7 +28,7 @@ export default function Home() {
           >
             <h2 className="mb-2 text-lg font-semibold">Directory API</h2>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              Node registry and discovery. Find relay nodes automatically.
+              Live registry of relay nodes. Client integration planned.
             </p>
           </Link>
 

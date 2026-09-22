@@ -7,11 +7,11 @@ description: How Peers works under the hood
 
 ## Overview
 
-Peers uses a Tauri 2 architecture. The Rust backend handles all cryptographic operations and P2P networking. The React frontend provides the user interface.
+Peers is a Tauri 2 app. The Rust backend handles all cryptographic operations and P2P networking. The React frontend is the user interface.
 
 ## Security model
 
-The frontend is a pure presentation shell. Private keys and decryption never leave the Rust backend. The Tauri invoke() boundary is the security boundary.
+The frontend is a pure presentation shell. Private keys and decryption never leave the Rust backend. The Tauri `invoke()` boundary is the security boundary.
 
 ```
 +-----------------------------------------------------+
@@ -33,51 +33,80 @@ The frontend is a pure presentation shell. Private keys and decryption never lea
 +-----------------------------------------------------+
 ```
 
+## Discovery, reachability, relaying
+
+Three different jobs, often confused:
+
+| Job | What it means | How Peers does it |
+|---|---|---|
+| Discovery | Finding where a peer is | Public IPFS DHT plus gossipsub meshes. Free, already working. |
+| Reachability | Being dialable at all | Impossible behind a home router. Needs a public node. |
+| Relaying | Carrying traffic when neither side is dialable | Only a machine with a public address, via Circuit Relay v2. |
+
+DHT bootstrap is not relaying. Peers resolves `_dnsaddr.bootstrap.libp2p.io` TXT records for the public IPFS bootstrap nodes. They help find peers and route queries. They never forward chat traffic and never see plaintext.
+
+Node discovery for relaying is manual today: operators hand out a `PEERS_NODES=` line, and clients paste it into the `PEERS_NODES` env var or `<config>/peers/nodes.json` (a JSON array of multiaddr strings, each ending in `/p2p/<peer-id>`). The env var wins when both are present. The project plan explicitly ships no canonical public node list, since that would make those nodes a de facto central dependency.
+
+## Bootstrap flow
+
+On startup, headless or GUI:
+
+1. Read `PEERS_NODES`. Split on commas, parse each as a multiaddr. If any parse, use them and never read `nodes.json`.
+2. Otherwise read `<config>/peers/nodes.json` as an array of multiaddr strings. Invalid entries are skipped silently.
+3. Dial every known node and reserve a relay slot on each, retrying with exponential backoff from 10 seconds up to a 5-minute ceiling.
+4. After a short delay, resolve the public IPFS bootstrap via DNS TXT and join the Kademlia DHT.
+5. Subscribe to gossipsub topics (DM, friend requests, servers, Plaza) and publish a subscribe notice on the shared `peers/v1/relay` topic so backbone nodes mesh them.
+
+GUI clients listen on an ephemeral port. Nobody dials a client by address. Clients are reached over relay circuits.
+
+## Relay tiers
+
+Every Peers process is a node that routes gossip, seeds blobs, and relays connections. A `--node` process is not a special build, just a different tier of the same binary. Whether an install actually relays is decided by reachability: an unreachable client advertises slots harmlessly, because nobody can dial it.
+
+| Tier | Reservations | Circuits | Per circuit | Who |
+|---|---|---|---|---|
+| `citizen` | 8 (2/peer) | 16 (2/peer) | 16 MiB | Every GUI client |
+| `node` | 64 (4/peer) | 64 (8/peer) | 128 MiB | `--node` |
+| `off` | 0 | 0 | none | `PEERS_NO_RELAY=1` |
+
+Raw connection limits sit above the relay caps, so the relay budget stays the binding constraint:
+
+| Tier | Pending in/out | Established in/out | Per peer | Who |
+|---|---|---|---|---|
+| `client` | 16 / 32 | 64 / 128 | 8 | GUI clients |
+| `node` | 64 / 64 | 512 / 256 | 8 | `--node` |
+
 ## Crypto module
 
 | File | Purpose |
 |---|---|
-| identity.rs | Ed25519 keypair + X25519 static secret, deterministic from entropy |
-| keystore.rs | v2 sealed keystore (Argon2id KDF + XChaCha20-Poly1305) |
-| seed.rs | HKDF domain-separated derivation from mnemonic entropy |
-| mnemonic.rs | BIP39 12/24-word mnemonic generate, decode, encode |
-| cipher.rs | ChaCha20-Poly1305 AEAD seal/open with seq-based nonces |
-| session.rs | Per-contact E2E key derivation: key_n = HKDF(SHA256^n(root)) |
-| card.rs | Self-authenticating PeerCard, multi-recipient sealed envelopes |
-| code.rs | 12-digit short peer codes via SHA-256 reduction |
-| server.rs | Servers, channels, roles, ACLs, invites, snapshots |
+| `identity.rs` | Ed25519 keypair plus X25519 static secret, deterministic from entropy |
+| `keystore.rs` | Version 2 sealed keystore (Argon2id KDF plus XChaCha20-Poly1305). Version 1 is refused. |
+| `seed.rs` | HKDF domain-separated derivation from mnemonic entropy |
+| `mnemonic.rs` | BIP39 12/24-word mnemonic generate, decode, encode |
+| `cipher.rs` | ChaCha20-Poly1305 AEAD seal/open with sequence-based nonces |
+| `session.rs` | Per-contact keys: `key_n = HKDF(SHA256^n(root))`, replay protection, out-of-order delivery |
+| `card.rs` | Self-authenticating peer cards, multi-recipient sealed envelopes |
+| `code.rs` | 12-digit short peer codes, used as DHT rendezvous keys |
+| `server.rs` | Servers, channels, roles, ACLs, invites, snapshots |
 
 ## P2P module
 
 | File | Purpose |
 |---|---|
-| mod.rs | Node event loop (tokio::select), swarm event handling |
-| behaviour.rs | Composite NetworkBehaviour: identify, ping, kad, gossipsub, relay, dcutr, autonat |
-| blobs.rs | Content-addressed BlobStore (SHA-256), request-response protocol |
-| bootstrap.rs | DNS bootstrap, PEERS_NODES env/nodes.json |
+| `mod.rs` | Node event loop, swarm handling, relay management with backoff |
+| `behaviour.rs` | Identify, ping, Kademlia, gossipsub, relay, DCUtR, AutoNAT, request-response |
+| `blobs.rs` | Content-addressed blob store (SHA-256), torrent-style DHT parking |
+| `bootstrap.rs` | `PEERS_NODES` / `nodes.json` / `PEERS_PORT` / `PEERS_ANNOUNCE`, DNS bootstrap |
 
 ## Network transports
 
-- TCP. Reliable transport.
-- QUIC. UDP-based, faster connection establishment.
-- Noise. Encrypted transport handshake (IK pattern).
-- Yamux. Stream multiplexing.
-
-## Relay system
-
-Every Peers process is a node that routes gossip, seeds blobs, and relays connections. Dedicated always-on nodes form the backbone.
-
-### Tiered relaying
-
-| Role | Reservations | Circuits | Memory Cap |
-|---|---|---|---|
-| Citizen (GUI client) | 8 | 16 | 16 MiB |
-| Node (--node) | 64 | 64 | 128 MiB |
-| Off (PEERS_NO_RELAY=1) | 0 | 0 | none |
+TCP for reliability, QUIC over UDP for faster setup, Noise for the encrypted handshake, Yamux for stream multiplexing.
 
 ## State persistence
 
-All state is sealed at rest using Argon2id + XChaCha20-Poly1305:
+All state is sealed at rest with Argon2id plus XChaCha20-Poly1305:
 
-- identity.json. Keystore (permissions 0600).
-- state.json. Servers, keychains, DM sessions, full history.
+- `identity.json`. The keystore, permissions `0600`.
+- `state.json`. Servers, keychains, DM sessions, full history.
+- `node_identity.json`. Headless node identity, plaintext peer key, permissions `0600`.
