@@ -1,52 +1,74 @@
-/* Landing page motion + theme. Space Grotesk is loaded via next/font. */
+/* PeersTech landing: operator's field manual. Paper, ink, one signal color. */
 
 .landing {
-  --ember: #ff6b35;
-  --ember-soft: rgba(255, 107, 53, 0.12);
-  --ink: #fafaf9;
-  --ink-dim: #a8a29e;
-  --surface: #0c0a09;
-  --edge: rgba(255, 255, 255, 0.08);
-  background: var(--surface);
+  --paper: #fafaf7;
+  --ink: #1c1b17;
+  --muted: #5f5d55;
+  --line: #e4e1d6;
+  --signal: #d9480f;
+  --machine: #111110;
+  --machine-ink: #d8d5c9;
+  background: var(--paper);
   color: var(--ink);
   overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
 }
 
 .landing ::selection {
-  background: var(--ember);
-  color: #0c0a09;
+  background: var(--ink);
+  color: var(--paper);
 }
 
-.font-grotesk {
-  font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+/* Fluid display type: scales smoothly 320px to 1920px, no breakpoint jumps */
+.display-hero {
+  font-size: clamp(2.75rem, 1.4rem + 5.2vw, 4.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
+.display-section {
+  font-size: clamp(1.75rem, 1.2rem + 2.4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 
-/* Scroll reveal */
-.reveal {
-  opacity: 0;
-  transform: translateY(28px);
-  transition:
-    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
+/* Film grain: kills the flat digital look, 2 percent overlay */
+.grain::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='30' height='30' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
 }
-.reveal.is-visible {
+
+.landing a:focus-visible,
+.landing button:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Dial sequence: multiaddr segments light up in order on load */
+.dial-seg {
+  opacity: 0.28;
+  transition: opacity 0.45s ease;
+}
+.dial-seg.lit {
   opacity: 1;
-  transform: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
+  .dial-seg {
     opacity: 1;
-    transform: none;
     transition: none;
   }
 }
 
-/* Hero entrance */
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(36px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -55,7 +77,7 @@
 }
 .rise {
   opacity: 0;
-  animation: rise-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: rise-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .rise {
@@ -64,114 +86,55 @@
   }
 }
 
-/* Floating glow orbs */
-@keyframes drift {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(60px, -40px) scale(1.15);
-  }
-}
-.orb {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(90px);
-  animation: drift 14s ease-in-out infinite;
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .orb {
-    animation: none;
-  }
-}
-
-/* Marquee ticker */
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.marquee-track {
-  display: flex;
-  width: max-content;
-  animation: marquee 28s linear infinite;
-}
-.marquee-track:hover {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    animation: none;
-    flex-wrap: wrap;
-    width: auto;
-  }
-}
-
-/* Gradient headline */
-.headline-gradient {
-  background: linear-gradient(100deg, #fafaf9 30%, #ff6b35 58%, #fbbf24 80%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* Grid backdrop */
-.bg-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 30%, transparent 75%);
-}
-
-/* Cards */
-.landing-card {
-  border: 1px solid var(--edge);
-  background: rgba(255, 255, 255, 0.025);
-  transition:
-    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.35s,
-    background 0.35s,
-    box-shadow 0.35s;
-}
-.landing-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(255, 107, 53, 0.45);
-  background: rgba(255, 107, 53, 0.05);
-  box-shadow: 0 24px 60px -24px rgba(255, 107, 53, 0.35);
-}
-
-/* Terminal */
+/* Terminal inset: the machine's voice against the manual's paper */
 .term {
-  border: 1px solid var(--edge);
-  background: rgba(0, 0, 0, 0.55);
-  box-shadow: 0 40px 100px -40px rgba(0, 0, 0, 0.9);
-}
-.term-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 9999px;
+  background: var(--machine);
+  color: var(--machine-ink);
+  border-radius: 14px;
+  box-shadow: 0 30px 70px -30px rgba(28, 27, 23, 0.45);
 }
 
-/* Pulsing live dot */
+/* Ledger rows for projects */
+.ledger-row {
+  border-top: 1px solid var(--line);
+  transition: background 0.25s ease;
+}
+.ledger-row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+.ledger-row:hover {
+  background: rgba(28, 27, 23, 0.035);
+}
+
+
+/* Copy button feedback */
+.copy-btn {
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+}
+.copy-btn:active {
+  transform: scale(0.96);
+}
+.copy-btn.rung {
+  box-shadow: 0 0 0 3px rgba(217, 72, 15, 0.35);
+}
+
+/* Live dot: the only always-on motion, it reports state */
 @keyframes ping-soft {
   0% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+    box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.45);
   }
   70% {
-    box-shadow: 0 0 0 9px rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 8px rgba(46, 160, 67, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+    box-shadow: 0 0 0 0 rgba(46, 160, 67, 0);
   }
 }
 .live-dot {
-  animation: ping-soft 2.2s ease-out infinite;
+  animation: ping-soft 2.4s ease-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .live-dot {
@@ -179,7 +142,23 @@
   }
 }
 
-/* Step connector */
-.step-line {
-  background: linear-gradient(180deg, rgba(255, 107, 53, 0.6), rgba(255, 107, 53, 0.05));
+/* Tier table */
+.tier-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.tier-table th,
+.tier-table td {
+  border-top: 1px solid var(--line);
+  padding: 0.85rem 0.25rem;
+  text-align: left;
+  vertical-align: baseline;
+}
+.tier-table thead th {
+  border-top: none;
+  color: var(--muted);
+  font-weight: 500;
+}
+.tier-table tbody tr:last-child td {
+  border-bottom: 1px solid var(--line);
 }

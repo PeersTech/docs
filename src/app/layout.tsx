@@ -1,13 +1,7 @@
 import './globals.css';
 import type { ReactNode } from 'react';
-import { Space_Grotesk } from 'next/font/google';
+import { funnel } from '@/lib/fonts';
 import type { Metadata } from 'next';
-
-const grotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: {
@@ -21,7 +15,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={grotesk.className}>{children}</body>
+      <body className={funnel.className}>{children}</body>
     </html>
   );
 }
