@@ -1,0 +1,60 @@
+---
+title: Troubleshooting
+description: Common issues and solutions
+---
+
+# Troubleshooting
+
+## Install issues
+
+### Install fails immediately with a message about releases
+
+INSTALL_METHOD is release and there are none. Switch to source.
+
+### Install dies silently around the linking stage
+
+Out of memory. Set CARGO_BUILD_JOBS=1, or add more RAM.
+
+### Install fails with missing library errors
+
+The Docker image lacks the webkit/GTK runtime libraries. Build the Docker image from the Dockerfile in this repo. Do not use stock yolks images.
+
+## Runtime issues
+
+### Node starts, logs look fine, no client can connect
+
+Check the reachability line. If PRIVATE, the port is not actually open. Check the provider's security group separately from ufw. Confirm you opened both TCP and UDP.
+
+### Node boots and exits instantly with a library error
+
+The Docker image lacks the webkit/GTK runtime libraries. You are on a stock image. Build the one in this repo.
+
+### peer connected but never relay reservation granted
+
+Clients reach the node but cannot reserve a slot. It is at capacity. A node tier allows 64 reservations. Add a second node.
+
+### Clients reconnect every few seconds
+
+Reservations are being granted then lost. Usually capacity, or an intermediate firewall dropping idle connections.
+
+## Identity issues
+
+### Node got a new peer ID after reinstall
+
+The identity file was lost during a Pterodactyl reinstall. Download node_identity.json via the file manager before reinstalling. Pin the port allocation as well.
+
+## Performance issues
+
+### Node is slow or unresponsive
+
+Check:
+
+- Memory usage (should be 100-200 MB)
+- Network bandwidth
+- CPU load
+
+Fixes:
+
+- Lower CARGO_BUILD_JOBS if install is OOM-killed
+- Add more RAM if running other services
+- Consider a dedicated VPS for high-traffic nodes

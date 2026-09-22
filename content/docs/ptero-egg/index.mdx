@@ -1,0 +1,25 @@
+---
+title: Overview
+description: Run Peers relay nodes on Pterodactyl
+---
+
+# Pterodactyl egg
+
+Runs an always-on Peers relay node as a Pterodactyl server.
+
+A node is what lets two people behind ordinary home routers talk to each other. Both peers dial the node, reserve a circuit through it, and their messages flow. Then DCUtR hole-punches a direct connection and the node drops out of the path. It is a switchboard, not a bottleneck.
+
+The node never reads anything. Messages are sealed end-to-end before they touch the wire. It sees ciphertext and routing metadata, nothing else. Running one does not make you a trusted party.
+
+## Files
+
+| File | What it is |
+|---|---|
+| egg-peers-node.json | Import this into the panel. Generated. Do not hand-edit. |
+| install.sh | The install script. Source of truth. |
+| egg.meta.json | Egg metadata and variables. Source of truth. |
+| build-egg.sh | Regenerates the egg JSON from the two files above. |
+| Dockerfile | Runtime image. You need to build and host this. |
+| entrypoint.sh | Container entrypoint, baked into the image. |
+
+After changing install.sh or egg.meta.json, run ./build-egg.sh and re-import.

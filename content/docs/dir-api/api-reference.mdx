@@ -1,0 +1,184 @@
+---
+title: API reference
+description: Endpoint documentation for the Directory API
+---
+
+# API reference
+
+All endpoints return JSON with `{"ok": boolean, "protocol": 1, ...}`.
+
+Every response carries heartbeatAfterSec. The server slows the fleet's heartbeat cadence as it grows.
+
+## Health check
+
+```
+GET /healthz
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "protocol": 1,
+  "nodes": 1234
+}
+```
+
+## Challenge
+
+Get a single-use nonce for registration.
+
+```
+GET /v1/challenge?peerId={peerId}
+```
+
+Parameters:
+
+| Name | Type | Description |
+|---|---|---|
+| peerId | string | Base58-encoded libp2p peer ID |
+
+Response:
+
+```json
+{
+  "ok": true,
+  "nonce": "a1b2c3d4e5f6...",
+  "expiresInSec": 300
+}
+```
+
+Errors:
+
+- 400. malformed peer id
+
+## Register
+
+Register a node with a signed challenge nonce.
+
+```
+POST /v1/register
+```
+
+Body:
+
+```json
+{
+  "peerId": "12D3KooW...",
+  "nonce": "a1b2c3d4e5f6...",
+  "sig": "base64-ed25519-signature",
+  "multiaddr": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...",
+  "region": "us-east-1",
+  "tier": "node"
+}
+```
+
+Signature message:
+
+```
+peers-directory:v1:register:{peerId}:{nonce}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "heartbeatAfterSec": 1800
+}
+```
+
+Errors:
+
+- 400. body must be json
+- 400. peerId, nonce, sig required
+- 400. signature invalid
+- 400. nonce unknown, expired or already used
+- 400. multiaddr must end in /p2p/same peer id
+
+## Heartbeat
+
+Keep a node alive. Inside half the cadence, this is a free ack (write-skipped).
+
+```
+POST /v1/heartbeat
+```
+
+Body:
+
+```json
+{
+  "peerId": "12D3KooW...",
+  "ts": 1700000000000,
+  "sig": "base64-ed25519-signature",
+  "multiaddr": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...",
+  "region": "us-east-1"
+}
+```
+
+Signature message:
+
+```
+peers-directory:v1:heartbeat:{peerId}:{timestamp}
+```
+
+Response:
+
+```json
+{
+  "ok": true,
+  "heartbeatAfterSec": 1800
+}
+```
+
+Or if write-skipped:
+
+```json
+{
+  "ok": true,
+  "skipped": true,
+  "heartbeatAfterSec": 1800
+}
+```
+
+Errors:
+
+- 400. signature invalid or clock too far off
+- 400. unknown node: multiaddr ending in /p2p/id required
+
+## List nodes
+
+Get fresh (recently seen) nodes with keyset pagination.
+
+```
+GET /v1/nodes?limit={limit}&cursor={cursor}
+```
+
+Parameters:
+
+| Name | Type | Default | Description |
+|---|---|---|---|
+| limit | number | 200 | Max nodes per page (1-500) |
+| cursor | string | none | Opaque pagination cursor from previous response |
+
+Response:
+
+```json
+{
+  "ok": true,
+  "protocol": 1,
+  "heartbeatAfterSec": 1800,
+  "nodes": [
+    {
+      "multiaddr": "/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...",
+      "peerId": "12D3KooW...",
+      "lastSeen": 1700000000000,
+      "region": "us-east-1",
+      "tier": "node"
+    }
+  ],
+  "nextCursor": "1700000000000:12D3KooW...",
+  "directoriesHint": ["https://directory.peers.dpdns.org"]
+}
+```

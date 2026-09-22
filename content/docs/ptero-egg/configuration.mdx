@@ -1,0 +1,65 @@
+---
+title: Configuration
+description: Environment variables and configuration options
+---
+
+# Configuration
+
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| INSTALL_METHOD | source | source or release. See below. |
+| PEERS_REF | main | Branch/tag/commit to build. Pin it. |
+| PEERS_REPO | upstream | Change only for a fork. |
+| PEERS_PUBLIC_IP | auto | The address clients dial. |
+| PEERS_ANNOUNCE | none | Full multiaddr override. Advanced. |
+| PEERS_NODES | none | Upstream nodes to chain to. |
+| PEERS_NO_RELAY | 0 | 1 forwards nothing. |
+| CARGO_BUILD_JOBS | 2 | Lower to 1 if the install is OOM-killed. |
+
+## INSTALL_METHOD
+
+### source (recommended)
+
+Builds the node from the git repository. Slow (10-25 minutes) but always works.
+
+### release
+
+Downloads a prebuilt binary from GitHub Releases.
+
+PeersTech/Peers has not published any GitHub Releases yet, so release will fail with an explanatory message until one is cut. Use source.
+
+## Build memory
+
+Linking a Tauri binary is memory-hungry. If the install stops partway through with no error, it was OOM-killed. Either raise the server's memory limit for the duration of the install, or set CARGO_BUILD_JOBS=1.
+
+A source build takes 10 to 25 minutes.
+
+## Upstream nodes
+
+The PEERS_NODES variable lets you chain nodes together. Each value must be a full multiaddr including the /p2p/peer-id suffix:
+
+```
+/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...
+```
+
+Multiple nodes can be comma-separated:
+
+```
+/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...,/ip4/198.51.100.3/tcp/4001/p2p/12D3KooX...
+```
+
+## Announce override
+
+PEERS_ANNOUNCE allows full control over the multiaddr advertised to clients. Use this for:
+
+- IPv6 addresses
+- DNS names
+- Different external/internal ports
+
+Format: comma-separated multiaddrs without the /p2p/id suffix:
+
+```
+/ip4/1.2.3.4/tcp/4001,/ip4/1.2.3.4/udp/4001/quic-v1
+```

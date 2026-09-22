@@ -1,0 +1,83 @@
+---
+title: Architecture
+description: How Peers works under the hood
+---
+
+# Architecture
+
+## Overview
+
+Peers uses a Tauri 2 architecture. The Rust backend handles all cryptographic operations and P2P networking. The React frontend provides the user interface.
+
+## Security model
+
+The frontend is a pure presentation shell. Private keys and decryption never leave the Rust backend. The Tauri invoke() boundary is the security boundary.
+
+```
++-----------------------------------------------------+
+|                    Frontend                          |
+|              React 19 + TypeScript                   |
+|                                                      |
+|   +----------------------------------------------+   |
+|   |            Tauri invoke() boundary            |   |
+|   +----------------------------------------------+   |
+|                          |                           |
+|                          v                           |
+|                    Backend                           |
+|               Rust + libp2p swarm                    |
+|                                                      |
+|   +---------+  +----------+  +-----------------+   |
+|   | Crypto  |  |   P2P    |  |     Store       |   |
+|   | Module  |  |  Module  |  |  (sealed JSON)  |   |
+|   +---------+  +----------+  +-----------------+   |
++-----------------------------------------------------+
+```
+
+## Crypto module
+
+| File | Purpose |
+|---|---|
+| identity.rs | Ed25519 keypair + X25519 static secret, deterministic from entropy |
+| keystore.rs | v2 sealed keystore (Argon2id KDF + XChaCha20-Poly1305) |
+| seed.rs | HKDF domain-separated derivation from mnemonic entropy |
+| mnemonic.rs | BIP39 12/24-word mnemonic generate, decode, encode |
+| cipher.rs | ChaCha20-Poly1305 AEAD seal/open with seq-based nonces |
+| session.rs | Per-contact E2E key derivation: key_n = HKDF(SHA256^n(root)) |
+| card.rs | Self-authenticating PeerCard, multi-recipient sealed envelopes |
+| code.rs | 12-digit short peer codes via SHA-256 reduction |
+| server.rs | Servers, channels, roles, ACLs, invites, snapshots |
+
+## P2P module
+
+| File | Purpose |
+|---|---|
+| mod.rs | Node event loop (tokio::select), swarm event handling |
+| behaviour.rs | Composite NetworkBehaviour: identify, ping, kad, gossipsub, relay, dcutr, autonat |
+| blobs.rs | Content-addressed BlobStore (SHA-256), request-response protocol |
+| bootstrap.rs | DNS bootstrap, PEERS_NODES env/nodes.json |
+
+## Network transports
+
+- TCP. Reliable transport.
+- QUIC. UDP-based, faster connection establishment.
+- Noise. Encrypted transport handshake (IK pattern).
+- Yamux. Stream multiplexing.
+
+## Relay system
+
+Every Peers process is a node that routes gossip, seeds blobs, and relays connections. Dedicated always-on nodes form the backbone.
+
+### Tiered relaying
+
+| Role | Reservations | Circuits | Memory Cap |
+|---|---|---|---|
+| Citizen (GUI client) | 8 | 16 | 16 MiB |
+| Node (--node) | 64 | 64 | 128 MiB |
+| Off (PEERS_NO_RELAY=1) | 0 | 0 | none |
+
+## State persistence
+
+All state is sealed at rest using Argon2id + XChaCha20-Poly1305:
+
+- identity.json. Keystore (permissions 0600).
+- state.json. Servers, keychains, DM sessions, full history.

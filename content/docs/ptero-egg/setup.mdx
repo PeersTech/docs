@@ -1,0 +1,95 @@
+---
+title: Setup guide
+description: Step-by-step Pterodactyl egg setup
+---
+
+# Setup guide
+
+## You must build the Docker image first
+
+This is not optional and no stock image will work.
+
+peers is a single binary that decides at runtime whether to open a window or run headless. Tauri is an unconditional dependency of the crate, so the binary is linked against webkit2gtk and GTK even in --node mode. The dynamic loader resolves those libraries at process start, before any code runs. Without them the node does not fail gracefully, it fails to boot at all. None of the parkervcp/yolks images carry desktop libraries.
+
+```sh
+git clone https://github.com/PeersTech/ptero-egg.git
+cd ptero-egg
+docker build -t ghcr.io/peerstech/ptero-egg:latest .
+docker push ghcr.io/peerstech/ptero-egg:latest
+```
+
+If you would rather not push anywhere, build it as peers-node:local on each Wings host and pick the "build locally" image in the egg.
+
+This is worth fixing upstream. If Peers ever puts Tauri behind a cargo feature, --node becomes a plain static-ish binary and this image collapses to a bare debian-slim.
+
+## Step 1: Import the egg
+
+Panel, then Nests, then Import Egg, then upload egg-peers-node.json.
+
+## Step 2: Create the server
+
+- Docker image: the one you built above.
+- Memory: 1 GB is plenty to run a node. The install needs more. See the note on build memory below.
+- Disk: 3 GB for a source install (the Rust toolchain and build artifacts are discarded afterwards, but they need room while they exist). 200 MB after.
+- Allocation: one port. Peers uses it for both TCP and QUIC/UDP.
+
+## Step 3: Open the port, both protocols
+
+The single most common reason a node looks healthy and nobody can use it.
+
+```sh
+sudo ufw allow <port>/tcp
+sudo ufw allow <port>/udp
+```
+
+On a cloud host, do the same in the provider's security group. That is a separate firewall from ufw and blocks traffic before it reaches the machine.
+
+## Step 4: Set the public IP
+
+Leave PEERS_PUBLIC_IP on auto and the node detects it at boot. If detection fails, or the container sits behind a load balancer, set the address explicitly.
+
+This matters because a container only ever sees its internal address. Without this variable the node advertises something like 172.18.0.5, which is a real listener, and completely useless to anyone outside the host.
+
+## Step 5: Start it, and read two lines
+
+```
+peers node peer id: 12D3KooW...
+announcing: /ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...
+  -> PEERS_NODES=/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...
+peers node is up.
+reachability: public (peers dialed us successfully)
+```
+
+Give clients the PEERS_NODES= line.
+
+Then wait for reachability. This is an AutoNAT result. Other peers were asked to dial the node back and it reports whether they got through. It is a measurement, not a guess.
+
+- public. Working.
+- PRIVATE. Packets are not arriving. Firewall, security group, or a wrong PEERS_PUBLIC_IP. No client can use this node until it says public.
+- unknown. Not enough peers to probe with yet. Give it a few minutes.
+
+## Step 6: Point clients at it
+
+On each client machine, write `config/peers/nodes.json`:
+
+```json
+["/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW..."]
+```
+
+| Platform | Path |
+|---|---|
+| Linux | ~/.config/peers/nodes.json |
+| macOS | ~/Library/Application Support/peers/nodes.json |
+| Windows | %APPDATA%\peers\nodes.json |
+
+Both people who want to talk must point at the same node.
+
+## Keep the identity file
+
+The node's identity lives at /home/container/.config/peers/node_identity.json and is generated on first boot.
+
+A Pterodactyl reinstall wipes the data volume. Losing this file gives the node a new peer ID, and every client still holding the old one keeps dialling an address that now answers as somebody else. This looks like a network fault, not a configuration change. Download it via the file manager before reinstalling.
+
+The same applies to the port: pin the allocation. Clients store the port alongside the peer ID, and an ephemeral one invalidates every config on each restart.
+
+Restarting the node itself is safe. Clients re-establish reservations automatically, retrying with exponential backoff from 10 seconds up to a 5-minute ceiling.

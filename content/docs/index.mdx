@@ -1,0 +1,77 @@
+---
+title: Introduction
+description: Welcome to the PeersTech documentation
+---
+
+# PeersTech
+
+A set of tools for decentralized communication. No central servers. No accounts. No databases.
+
+## Projects
+
+<Cards>
+  <Card>
+    ### Peers
+    An end-to-end encrypted messenger. Peer-to-peer over libp2p.
+
+    [Get Started](/docs/peers)
+  </Card>
+  <Card>
+    ### Directory API
+    Node registry and discovery. Clients find relay nodes without pasting addresses.
+
+    [Get Started](/docs/dir-api)
+  </Card>
+  <Card>
+    ### Pterodactyl Egg
+    Run relay nodes as Pterodactyl servers. One-click deployment.
+
+    [Get Started](/docs/ptero-egg)
+  </Card>
+</Cards>
+
+## How it works
+
+```mermaid
+graph TB
+    subgraph Clients
+        A[Peers App]
+        B[Peers App]
+    end
+    
+    subgraph P2P Network
+        C[libp2p Mesh]
+        D[Kademlia DHT]
+        E[Gossipsub]
+    end
+    
+    subgraph Relay Nodes
+        F[Node 1]
+        G[Node 2]
+        H[Node N]
+    end
+    
+    A -->|E2E Encrypted| C
+    B -->|E2E Encrypted| C
+    C --> D
+    C --> E
+    F --> C
+    G --> C
+    H --> C
+    
+    subgraph Discovery
+        I[Directory API]
+    end
+    
+    A -->|Find Nodes| I
+    B -->|Find Nodes| I
+    F -->|Heartbeat| I
+    G -->|Heartbeat| I
+    H -->|Heartbeat| I
+```
+
+## Design principles
+
+- Self-certifying identities. Ed25519 keys embedded in peer IDs.
+- NAT traversal through Circuit Relay v2 and DCUtR hole punching.
+- Runs on Raspberry Pi, old laptops, and cheap VPSs.

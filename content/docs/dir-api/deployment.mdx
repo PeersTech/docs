@@ -1,0 +1,85 @@
+---
+title: Deployment
+description: Deploy the Directory API to Cloudflare
+---
+
+# Deployment
+
+## Prerequisites
+
+- Node.js 20+
+- Cloudflare account (Workers Paid for 10k+ nodes)
+- wrangler CLI
+
+## Setup
+
+```sh
+cd dir-api
+npm ci
+npx wrangler login
+```
+
+## Database
+
+```sh
+# Create D1 database
+npx wrangler d1 create dir-api
+
+# Paste the database ID into wrangler.toml:
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "dir-api"
+# database_id = "YOUR_ID_HERE"
+
+# Apply schema
+npx wrangler d1 execute dir-api --remote --file schema.sql
+```
+
+## Deploy
+
+```sh
+npx wrangler deploy
+```
+
+This attaches the custom domain directory.peers.dpdns.org. The zone must be on Cloudflare.
+
+## Local development
+
+```sh
+npm run dev
+```
+
+This runs a local D1 instance via wrangler dev.
+
+## Testing
+
+```sh
+npm test          # full flow + fake-id / replay / poisoning / pagination
+npm run typecheck # TypeScript check
+```
+
+## Cron jobs
+
+The worker has a cron trigger (*/30 * * * *) that:
+
+- Prunes expired nonces
+- Removes nodes unseen for 7+ days
+
+This runs automatically after deployment.
+
+## Environment
+
+| Variable | Description |
+|---|---|
+| DB | D1 database binding (configured in wrangler.toml) |
+
+## Monitoring
+
+Enable observability in wrangler.toml:
+
+```toml
+[observability]
+enabled = true
+```
+
+View logs in the Cloudflare dashboard under Workers and Pages, then dir-api, then Logs.

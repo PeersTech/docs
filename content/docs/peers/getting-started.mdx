@@ -1,0 +1,66 @@
+---
+title: Getting started
+description: Install and run Peers in development
+---
+
+# Getting started
+
+## Prerequisites
+
+- Node.js 20+ with npm
+- A Rust toolchain. See [Tauri prerequisites](https://tauri.app/start/prerequisites/).
+- Linux: webkit2gtk 4.1, libgtk-3, librsvg, patchelf
+
+## Run in development
+
+```sh
+# 1. install frontend deps (includes the Tauri CLI)
+cd frontend && npm install
+
+# 2. start the app with hot reload (vite + cargo watch)
+npm run tauri:dev
+```
+
+## Production build
+
+```sh
+npm run tauri:build
+```
+
+Bundles installers into backend/target/release/bundle.
+
+## Regenerate app icons
+
+```sh
+node scripts/gen-icons.mjs
+```
+
+Draws the Peers logo. Pure Node, zero dependencies.
+
+## Headless node mode
+
+Run the backend as an always-on routing/relay node with no GUI:
+
+```sh
+./peers --node
+```
+
+This works well on Raspberry Pi, old laptops, or cheap VPSs that serve as backbone nodes.
+
+### Node identity
+
+On first boot, a node identity is auto-generated and stored at:
+
+- Linux: ~/.config/peers/node_identity.json
+- macOS: ~/Library/Application Support/peers/node_identity.json
+- Windows: %APPDATA%\peers\node_identity.json
+
+### Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| PEERS_PORT | 4001 | Listen port (TCP + UDP) |
+| PEERS_PUBLIC_IP | auto-detected | Public IP for client dialing |
+| PEERS_ANNOUNCE | none | Full multiaddr override |
+| PEERS_NODES | none | Upstream nodes to chain to |
+| PEERS_NO_RELAY | none | Set to 1 to disable relaying |
