@@ -138,9 +138,9 @@ export default function Home() {
                 className="rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[#98a2b3]"
                 style={{ animationDelay: '220ms' }}
               >
-                Peers is a desktop messenger where every byte is encrypted
-                end-to-end and every message travels peer-to-peer over a public
-                libp2p mesh. No accounts, no company reading along, no central message database to
+                Peers is a desktop messenger where direct messages are sealed
+                end-to-end and delivered peer-to-peer over a public
+                libp2p mesh. No accounts, no company reading along, and no central message database to
                 seize.
               </p>
               <div
@@ -296,14 +296,14 @@ export default function Home() {
                   href: '/docs/dir-api',
                   tag: 'Service',
                   name: 'Directory API',
-                  body: 'Live registry of relay nodes on Cloudflare. Signed IDs, adaptive heartbeat cadence. Client fetching planned.',
+                  body: 'Live registry of relay nodes on Cloudflare. Signed IDs, fixed heartbeat cadence, client fetching planned.',
                   cta: 'Explore the API',
                 },
                 {
                   href: '/docs/ptero-egg',
                   tag: 'Deploy',
                   name: 'Pterodactyl egg',
-                  body: 'One-click relay nodes on game-server panels. Custom image, public-IP detect, identity-safe reinstalls.',
+                  body: 'Deploy relay nodes on game-server panels after building a custom runtime image. Public-IP detection and identity-safe upgrades are included.',
                   cta: 'Run a node',
                 },
               ].map((p) => (

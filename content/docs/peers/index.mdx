@@ -3,11 +3,15 @@ title: Peers
 description: A serverless, end-to-end encrypted messenger
 ---
 
-A serverless, end-to-end encrypted messenger. No accounts. No servers. No databases.
+A serverless, end-to-end encrypted messenger. No accounts, no central message
+server, and no project-operated message database. Optional relay infrastructure
+helps peers behind NAT connect.
 
 ## What Peers does
 
-Every byte is encrypted end-to-end. Every message is delivered peer-to-peer over a public libp2p network. There is no central service to trust, no company that can read your conversations, and no server that can be taken down.
+Direct messages are sealed end-to-end and delivered peer-to-peer over a public
+libp2p network. There is no central account or message database operated by
+Peers; optional relay nodes carry ciphertext and routing metadata.
 
 ```
 Peers (Tauri 2)
