@@ -3,8 +3,6 @@ title: Troubleshooting
 description: Common issues and solutions
 ---
 
-# Troubleshooting
-
 ## Install issues
 
 ### Install fails immediately with a message about releases
@@ -49,7 +47,8 @@ The identity file was lost during a Pterodactyl reinstall. Download node_identit
 
 Check:
 
-- Memory usage (should be 100-200 MB)
+- Memory usage (the node process is often 30–60 MB idle; the Pterodactyl
+  container may show 100–200 MB with Wings, the shell, and container overhead)
 - Network bandwidth
 - CPU load
 

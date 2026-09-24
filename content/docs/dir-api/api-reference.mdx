@@ -3,15 +3,15 @@ title: API reference
 description: Endpoint documentation for the Directory API
 ---
 
-# API reference
-
 All endpoints return JSON with `{ok: boolean, protocol: 1, ...}`.
 
-Every response carries `heartbeatAfterSec`. The server slows the fleet's heartbeat cadence as it grows, which keeps D1 write volume inside plan limits.
+Every response carries `heartbeatAfterSec`. The service currently uses a fixed
+30-minute heartbeat cadence. Registration and heartbeat proofs are verified;
+read and health endpoints are intentionally unauthenticated.
 
 Addresses are `multiaddrs`: comma-separated full multiaddrs, each ending in `/p2p/<same peer id>`. That is the same format as `PEERS_NODES`, so the list endpoint output drops straight into client config.
 
-Tiers are the Peers relay tiers: `citizen`, `node`, or `off`. Anything else is rejected with 400. Absent means `node`.
+Tiers are the Peers relay tiers: `citizen`, `node`, or `off`. Anything else is rejected with 400. Absent means `node`. Nodes with `tier: "off"` are accepted for bookkeeping but omitted from relay discovery.
 
 ## Health check
 
@@ -55,7 +55,7 @@ Response:
 
 Errors:
 
-- 400. malformed peer id
+- `400` — malformed peer id
 
 ## Register
 
@@ -84,6 +84,9 @@ Signature message:
 peers-directory:v1:register:{peerId}:{nonce}
 ```
 
+The v1 registration proof binds the peer ID and nonce. The request metadata is
+validated separately but is not included in the v1 signature.
+
 Response:
 
 ```json
@@ -95,12 +98,12 @@ Response:
 
 Errors:
 
-- 400. body must be json
-- 400. peerId, nonce, sig required
-- 400. signature invalid
-- 400. tier must be citizen, node, or off
-- 400. nonce unknown, expired or already used
-- 400. multiaddrs must be comma-separated addrs ending in /p2p/same peer id
+- `400` — body must be json
+- `400` — peerId, nonce, sig required
+- `400` — signature invalid
+- `400` — tier must be citizen, node, or off
+- `400` — nonce unknown, expired or already used
+- `400` — multiaddrs must be comma-separated addrs ending in /p2p/same peer id
 
 ## Heartbeat
 
@@ -129,7 +132,10 @@ Signature message:
 peers-directory:v1:heartbeat:{peerId}:{timestamp}
 ```
 
-The timestamp must be within the skew window (15 minutes by default), which kills replays.
+The timestamp must be within the skew window (15 minutes by default). This rejects
+stale and future requests, but the v1 heartbeat proof does not provide durable
+replay protection; keep the endpoint behind HTTPS and do not reuse a captured
+request. The v1 signature also does not bind `multiaddrs`, `region`, or `tier`.
 
 Response:
 
@@ -152,9 +158,9 @@ Or if write-skipped:
 
 Errors:
 
-- 400. signature invalid or clock too far off
-- 400. tier must be citizen, node, or off
-- 400. unknown node: multiaddrs ending in /p2p/id required
+- `400` — signature invalid or clock too far off
+- `400` — tier must be citizen, node, or off
+- `400` — unknown node: multiaddrs ending in /p2p/id required
 
 ## List nodes
 
@@ -193,4 +199,4 @@ Response:
 }
 ```
 
-Newest first. The cursor is a composite `lastSeen:peerId` pair, so rows sharing a timestamp never straddle or repeat across pages.
+Newest first. The cursor is a composite `lastSeen:peerId` pair, so rows sharing a timestamp never straddle or repeat across pages. `nextCursor` is present only when another page exists.

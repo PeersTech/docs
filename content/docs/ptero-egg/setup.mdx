@@ -3,13 +3,16 @@ title: Setup guide
 description: Step-by-step Pterodactyl egg setup
 ---
 
-# Setup guide
-
 ## You must build the Docker image first
 
 This is not optional and no stock image will work.
 
-peers is a single binary that decides at runtime whether to open a window or run headless. Tauri is an unconditional dependency of the crate, so the binary is linked against webkit2gtk and GTK even in --node mode. The dynamic loader resolves those libraries at process start, before any code runs. Without them the node does not fail gracefully, it fails to boot at all. None of the parkervcp/yolks images carry desktop libraries.
+Peers is a single binary that decides at runtime whether to open a window or
+run headless. Tauri is an unconditional dependency of the crate, so the binary
+is linked against webkit2gtk and GTK even in `--node` mode. The dynamic loader
+resolves those libraries at process start, before any code runs. Without them
+the node does not fail gracefully, it fails to boot at all. None of the
+`parkervcp/yolks` images carry desktop libraries.
 
 ```sh
 git clone https://github.com/PeersTech/ptero-egg.git
@@ -30,19 +33,27 @@ Panel, then Nests, then Import Egg, then upload egg-peers-node.json.
 
 - Docker image: the one you built above.
 - Memory: 1 GB is plenty to run a node. The install needs more. See the note on build memory below.
-- Disk: 3 GB for a source install (the Rust toolchain and build artifacts are discarded afterwards, but they need room while they exist). 200 MB after.
+- Disk: 3 GB for a source install. Build artifacts stay on the server volume,
+  not Pterodactyl's memory-backed `/tmp`, and are removed after installation.
+  200 MB is enough after installation.
 - Allocation: one port. Peers uses it for both TCP and QUIC/UDP.
 
 ## Step 3: Open the port, both protocols
 
 The single most common reason a node looks healthy and nobody can use it.
+Pterodactyl allocations commonly publish TCP only, so confirm that Wings maps
+**both** TCP and UDP for the allocation. Opening a host firewall is not enough
+if Docker never publishes the UDP port into the container.
 
 ```sh
 sudo ufw allow <port>/tcp
 sudo ufw allow <port>/udp
 ```
 
-On a cloud host, do the same in the provider's security group. That is a separate firewall from ufw and blocks traffic before it reaches the machine.
+On a cloud host, do the same in the provider's security group. That is a
+separate firewall from `ufw` and blocks traffic before it reaches the machine.
+From another machine, verify TCP with `nc -vz <ip> <port>` and verify UDP with
+a QUIC-capable client.
 
 ## Step 4: Set the public IP
 
@@ -70,7 +81,8 @@ Then wait for reachability. This is an AutoNAT result. Other peers were asked to
 
 ## Step 6: Point clients at it
 
-On each client machine, write `config/peers/nodes.json`:
+On each client machine, write the platform-specific `<config>/peers/nodes.json`
+file:
 
 ```json
 ["/ip4/203.0.113.7/tcp/4001/p2p/12D3KooW..."]

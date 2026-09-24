@@ -3,15 +3,13 @@ title: Configuration
 description: Environment variables and configuration options
 ---
 
-# Configuration
-
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
 | INSTALL_METHOD | source | source or release. See below. |
-| PEERS_REF | main | Branch/tag/commit to build. Pin it. |
-| PEERS_REPO | upstream | Change only for a fork. |
+| PEERS_REF | main | Branch or tag to build. Pin it for a stable install. |
+| PEERS_REPO | `https://github.com/PeersTech/Peers.git` | Change only for a fork. |
 | PEERS_PUBLIC_IP | auto | The address clients dial. |
 | PEERS_ANNOUNCE | none | Full multiaddr override. Advanced. |
 | PEERS_NODES | none | Upstream nodes to chain to. |
@@ -26,9 +24,10 @@ Builds the node from the git repository. Slow (10-25 minutes) but always works.
 
 ### release
 
-Downloads a prebuilt binary from GitHub Releases.
-
-PeersTech/Peers has not published any GitHub Releases yet, so release will fail with an explanatory message until one is cut. Use source.
+Downloads a prebuilt binary from GitHub Releases. This path is not supported
+until a release includes a documented checksum/signature and an exact Linux
+architecture contract. PeersTech/Peers has not published a release yet, so use
+source.
 
 ## Build memory
 
@@ -49,6 +48,10 @@ Multiple nodes can be comma-separated:
 ```
 /ip4/203.0.113.7/tcp/4001/p2p/12D3KooW...,/ip4/198.51.100.3/tcp/4001/p2p/12D3KooX...
 ```
+
+`PEERS_PUBLIC_IP` and automatic detection are IPv4-only in this egg. Use
+`PEERS_ANNOUNCE` for IPv6 or DNS-based addresses, and verify that the upstream
+node is actually listening on the transport you announce.
 
 ## Announce override
 

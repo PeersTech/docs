@@ -3,15 +3,13 @@ title: Architecture
 description: How Peers works under the hood
 ---
 
-# Architecture
-
 ## Overview
 
 Peers is a Tauri 2 app. The Rust backend handles all cryptographic operations and P2P networking. The React frontend is the user interface.
 
 ## Security model
 
-The frontend is a pure presentation shell. Private keys and decryption never leave the Rust backend. The Tauri `invoke()` boundary is the security boundary.
+The frontend is primarily a presentation shell. Derived private keys and message decryption stay in the Rust backend. The Tauri `invoke()` boundary is the security boundary, with one explicit onboarding exception: the recovery phrase is displayed locally so the user can save it, then passed back to the backend.
 
 ```
 +-----------------------------------------------------+
@@ -105,8 +103,10 @@ TCP for reliability, QUIC over UDP for faster setup, Noise for the encrypted han
 
 ## State persistence
 
-All state is sealed at rest with Argon2id plus XChaCha20-Poly1305:
+GUI identity and application state are sealed at rest with Argon2id plus
+XChaCha20-Poly1305:
 
 - `identity.json`. The keystore, permissions `0600`.
 - `state.json`. Servers, keychains, DM sessions, full history.
-- `node_identity.json`. Headless node identity, plaintext peer key, permissions `0600`.
+- `node_identity.json`. A headless node has no user secrets, so its routing
+  identity is plaintext with permissions `0600` and service-user isolation.

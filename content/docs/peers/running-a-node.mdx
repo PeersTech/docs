@@ -3,8 +3,6 @@ title: Running a node
 description: Set up an always-on Peers relay node
 ---
 
-# Running a node
-
 A node is a Peers process with a public address that other peers can dial. It is what makes chat work between two people who are both behind home routers, which is to say, between almost any two people in different countries.
 
 ## Why you need one
@@ -47,7 +45,8 @@ The binary lands at `backend/target/release/peers`.
 
 On a 1 GB Pi, `cargo build --release` may run out of memory while linking. Build on a bigger machine with the same architecture and copy the binary across, or add swap.
 
-Running on Pterodactyl? There is a ready-made egg that does all of this for you, including the public-address handling in step 3. See the ptero-egg docs.
+Running on Pterodactyl? Use the [Pterodactyl setup guide](/docs/ptero-egg/setup)
+after building its custom runtime image.
 
 ### 2. Open the firewall
 

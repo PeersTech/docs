@@ -1,11 +1,9 @@
 ---
-title: Overview
+title: Directory API
 description: Node registry and discovery service
 ---
 
-# Directory API
-
-A Cloudflare Worker (Hono + D1) that answers "which backbone nodes are alive right now?" Nodes register with signed peer IDs and heartbeat to stay listed. Clients fetch the list instead of pasting addresses by hand.
+A Cloudflare Worker (Hono + D1) that answers "which backbone nodes are alive right now?" Nodes register with signed peer IDs and heartbeat to stay listed. The service is live; client integration is still planned, so operators currently distribute the printed `PEERS_NODES=` line manually.
 
 Production URL: https://directory.peers.dpdns.org
 
@@ -15,10 +13,11 @@ The service is live and the protocol is stable. Peers clients do not call it yet
 
 Peer discovery itself needs no directory. Finding *where a peer is* already works over the public IPFS DHT. This service solves the narrower problem: finding *relay nodes with public addresses* so two NAT'd peers have something to dial.
 
-## Trust model
+Read the [API reference](/docs/dir-api/api-reference) for endpoint details or
+[Deployment](/docs/dir-api/deployment) to run the Worker.
 
-- A libp2p peer ID embeds its own Ed25519 public key. Every request is verified against the key inside the ID. No accounts, no trust on first use.
-- Every multiaddr must terminate at `/p2p/<same peer id>` that signed. Address poisoning is structurally impossible.
+- A libp2p peer ID embeds its own Ed25519 public key. Registration and heartbeat proofs are verified against the key inside the ID. Read and health endpoints are public. No accounts, no trust on first use.
+- Every multiaddr is bounded, checked for a common transport shape, and must terminate at `/p2p/<same peer id>` that signed. The registry verifies the suffix, not whether an address is reachable.
 - Nonces are consumed atomically (`DELETE ... RETURNING`). Replays fail.
 - Clients still dial and verify locally. A hostile directory can degrade onboarding, never read traffic. There is no traffic here to read.
 
@@ -26,7 +25,7 @@ Peer discovery itself needs no directory. Finding *where a peer is* already work
 
 | Metric | Value |
 |---|---|
-| Write volume | Heartbeats only, adaptive cadence (30 min default): 10k nodes is about 480k writes/day |
+| Write volume | Heartbeats only, fixed cadence (30 min): 10k nodes is about 480k writes/day |
 | Storage | 10k rows is a rounding error for D1 |
 | Free tier fit | About 2k nodes |
 

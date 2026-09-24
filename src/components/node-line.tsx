@@ -1,9 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { mono } from '@/lib/fonts';
-
-const LINE = '/ip4/203.0.113.7/tcp/4001/p2p/12D3KooWQ7xJ4kR2mN8pL5vX3wY6zA9bC1dE4fG7hJ0kL2mN5pQ';
 
 const SEGS = [
   { text: 'PEERS_NODES=', tone: 'text-[#98a2b3]' },
@@ -16,7 +15,6 @@ const DIM = 'text-[#98a2b3]';
 
 export function NodeLine() {
   const [lit, setLit] = useState(-1);
-  const [copied, setCopied] = useState(false);
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
@@ -32,22 +30,6 @@ export function NodeLine() {
     };
   }, []);
 
-  const copy = async () => {
-    const text = `PEERS_NODES=${LINE}`;
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div className="term overflow-hidden">
       <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
@@ -59,7 +41,7 @@ export function NodeLine() {
         </div>
         <span className={`flex items-center gap-2 text-xs ${DIM}`}>
           <span className="live-dot inline-block h-2 w-2 rounded-full bg-[#47cd89]" />
-          reachability: public
+          example output · not a live node
         </span>
       </div>
       <div className={`${mono.className} space-y-2 p-5 text-[13px] leading-7`}>
@@ -75,18 +57,16 @@ export function NodeLine() {
         <p className={DIM}>peers node is up.</p>
       </div>
       <div className="border-t border-white/10 px-5 py-4">
-        <button
-          type="button"
-          onClick={copy}
-          className={`copy-btn ${mono.className} w-full rounded-lg px-4 py-3 text-sm font-medium ${
-            copied ? 'bg-[#47cd89] text-[#0b0d10]' : 'bg-[#ff6b35] text-[#0b0d10] hover:bg-[#ff7d4d]'
-          }`}
+        <Link
+          href="/docs/peers/running-a-node"
+          className={`${mono.className} block w-full rounded-lg bg-[#ff6b35] px-4 py-3 text-center text-sm font-medium text-[#0b0d10] transition-colors hover:bg-[#ff7d4d]`}
         >
-          {copied ? 'Copied to clipboard' : 'Copy the line'}
-        </button>
+          Read the node guide
+        </Link>
         <p className={`mt-3 text-xs leading-relaxed ${DIM}`}>
-          This is the whole onboarding. The operator copies one line, both users
-          paste it once into PEERS_NODES or nodes.json.
+          This is an illustrative address, not a live node. A real operator
+          copies the line printed by <code>peers --node</code> into
+          <code> PEERS_NODES</code> or <code>nodes.json</code>.
         </p>
       </div>
     </div>

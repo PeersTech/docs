@@ -3,18 +3,16 @@ title: Getting started
 description: Install and run Peers in development
 ---
 
-# Getting started
-
 ## Prerequisites
 
-- Node.js 20+ with npm
+- Node.js 20.19+ (or 22 LTS) with npm
 - A Rust toolchain. See [Tauri prerequisites](https://tauri.app/start/prerequisites/). On Linux that means webkit2gtk 4.1, libgtk-3, librsvg and patchelf, plus the usual build tools.
 
 ## Run in development
 
 ```sh
 # 1. install frontend deps (includes the Tauri CLI)
-cd frontend && npm install
+cd frontend && npm ci
 
 # 2. start the app with hot reload (vite + cargo watch)
 npm run tauri:dev

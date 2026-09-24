@@ -10,6 +10,7 @@ import {
 import './landing.css';
 import { SmoothScroll } from '@/components/smooth-scroll';
 import { NodeLine } from '@/components/node-line';
+import { BentoCard, BentoGrid } from '@/components/landing-bento';
 import { mono } from '@/lib/fonts';
 
 const features = [
@@ -21,7 +22,7 @@ const features = [
   {
     icon: ServerOff,
     title: 'Serverless by design',
-    body: 'No backend, no accounts, no phone numbers, no database. Private keys never leave the Rust backend.',
+    body: 'No central account or message database. Derived private keys and message decryption stay in the Rust backend; optional relay infrastructure helps peers behind NAT connect.',
   },
   {
     icon: Network,
@@ -47,9 +48,9 @@ const features = [
 
 const metrics = [
   { value: '30–60 MB', label: 'Idle RAM per node' },
-  { value: '4', label: 'Environment variables, total' },
+  { value: '4', label: 'Core Peers binary variables' },
   { value: '64', label: 'Relay slots per node' },
-  { value: '12 words', label: 'Is your whole identity' },
+  { value: '12/24', label: 'Words in your recovery identity' },
 ];
 
 function Bar({
@@ -131,7 +132,7 @@ export default function Home() {
                 className="rise display-hero mx-auto mt-6 max-w-3xl font-semibold"
                 style={{ animationDelay: '110ms' }}
               >
-                Two routers. One line. Zero servers.
+                Two routers. One line. No central message server.
               </h1>
               <p
                 className="rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-[#98a2b3]"
@@ -139,7 +140,7 @@ export default function Home() {
               >
                 Peers is a desktop messenger where every byte is encrypted
                 end-to-end and every message travels peer-to-peer over a public
-                libp2p mesh. No accounts, no company reading along, no server to
+                libp2p mesh. No accounts, no company reading along, no central message database to
                 seize.
               </p>
               <div
@@ -194,17 +195,17 @@ export default function Home() {
             <h2 className="display-section mx-auto mt-3 max-w-2xl text-center font-semibold">
               Chat that trusts no one but the people chatting
             </h2>
-            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {features.map((f) => (
-                <div key={f.title} className="u-card p-7">
-                  <span className="icon-chip">
-                    <f.icon size={22} strokeWidth={1.8} aria-hidden />
-                  </span>
-                  <h3 className="mt-5 text-lg font-semibold tracking-tight">{f.title}</h3>
-                  <p className="mt-2.5 leading-relaxed text-[#98a2b3]">{f.body}</p>
-                </div>
+            <BentoGrid>
+              {features.map((f, index) => (
+                <BentoCard
+                  key={f.title}
+                  icon={f.icon}
+                  title={f.title}
+                  body={f.body}
+                  featured={index === 0}
+                />
               ))}
-            </div>
+            </BentoGrid>
           </section>
 
           <section className="mx-auto max-w-6xl px-6 py-20">
@@ -379,7 +380,7 @@ export default function Home() {
                 Egg
               </Link>
             </nav>
-            <p className="text-xs text-[#667085]">No accounts. No servers. No databases.</p>
+            <p className="text-xs text-[#667085]">No accounts. No central message database.</p>
           </div>
         </footer>
       </div>

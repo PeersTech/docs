@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: '%s · PeersTech',
   },
   description:
-    'Peers is a serverless, end-to-end encrypted messenger. No accounts. No servers. No databases.',
+    'Peers is a serverless, end-to-end encrypted messenger with no central account or message database. Optional relay nodes and a node directory help peers behind NAT connect.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

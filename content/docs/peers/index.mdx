@@ -1,9 +1,7 @@
 ---
-title: Overview
+title: Peers
 description: A serverless, end-to-end encrypted messenger
 ---
-
-# Peers
 
 A serverless, end-to-end encrypted messenger. No accounts. No servers. No databases.
 
@@ -27,7 +25,7 @@ Peers (Tauri 2)
 +------------------------------------------------------------+
 ```
 
-The GUI is a shell only. Private keys and decryption never leave the Rust backend. The frontend never sees a secret.
+The GUI is a shell only. Derived private keys and message decryption never leave the Rust backend. During first-run recovery, the frontend displays the recovery phrase so you can save it, then sends it back to the backend for identity setup.
 
 ## Features
 
@@ -87,12 +85,12 @@ Peers/
 - [x] M6. Snapshots: owner-signed history export and import
 - [x] M6.5. Persistence, presence, deterministic invite dialing
 - [ ] M7. Packaging and open-source release
-- [ ] M8. Friend codes: share/scan peer-ID code, DHT find_peer
-- [ ] M9. Circuit Relay v2: NAT'd peers connect through always-on nodes
-- [ ] M10. DCUtR hole punching: upgrade relayed connections to direct P2P
+- [ ] M8. Friend codes: DHT lookup exists; direct key exchange still needs hardening
+- [x] M9. Circuit Relay v2: NAT'd peers connect through always-on nodes
+- [x] M10. DCUtR hole punching: upgrade relayed connections to direct P2P
 - [x] M11. Headless node mode (--node)
 - [x] M12. Node bootstrap + capacity caps
 - [x] M13. Deployment guide
-- [ ] M14. Custom profiles: signed display name, profile picture
-- [ ] M15. The Plaza: global auto-joined channel
+- [x] M14. Custom profiles: signed display name, profile picture, about me
+- [x] M15. The Plaza: global auto-joined channel
 - [x] M16. Seed-phrase login: BIP39 12/24-word phrase

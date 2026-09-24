@@ -3,36 +3,33 @@ title: Introduction
 description: Welcome to the PeersTech documentation
 ---
 
-# PeersTech
-
-Tools for decentralized communication. No central servers. No accounts. No databases.
+Tools for decentralized communication. No central message server, accounts, or
+project-operated message database. Optional relay nodes and a node directory
+make communication across NATs possible.
 
 ## Projects
 
 <Cards>
-  <Card>
-    ### Peers
-    An end-to-end encrypted messenger. Peer-to-peer over libp2p.
-
-    [Get Started](/docs/peers)
-  </Card>
-  <Card>
-    ### Directory API
-    A live registry of relay nodes. Client integration is planned, not yet wired.
-
-    [Get Started](/docs/dir-api)
-  </Card>
-  <Card>
-    ### Pterodactyl Egg
-    Run relay nodes as Pterodactyl servers. One-click deployment.
-
-    [Get Started](/docs/ptero-egg)
-  </Card>
+  <Card
+    title="Peers"
+    description="An end-to-end encrypted messenger. Peer-to-peer over libp2p."
+    href="/docs/peers"
+  />
+  <Card
+    title="Directory API"
+    description="A live registry of relay nodes. Client integration is planned, not yet wired."
+    href="/docs/dir-api"
+  />
+  <Card
+    title="Pterodactyl egg"
+    description="Deploy relay nodes through Pterodactyl after building the custom runtime image."
+    href="/docs/ptero-egg"
+  />
 </Cards>
 
 ## How it works
 
-```mermaid
+```text
 graph TB
     subgraph Clients
         A[Peers App]

@@ -3,8 +3,6 @@ title: Deployment
 description: Deploy the Directory API to Cloudflare
 ---
 
-# Deployment
-
 ## Prerequisites
 
 - Node.js 20+
@@ -13,7 +11,10 @@ description: Deploy the Directory API to Cloudflare
 
 ## Setup
 
+Clone the service repository, then install its dependencies:
+
 ```sh
+git clone https://github.com/PeersTech/dir-api.git
 cd dir-api
 npm ci
 npx wrangler login
