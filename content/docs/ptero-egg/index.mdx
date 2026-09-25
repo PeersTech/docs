@@ -19,8 +19,8 @@ is acceptable.
 ## Message and attachment visibility
 
 The relay can observe routing metadata, signed control traffic, server/Plaza
-traffic, and DHT blob requests. Small server-channel attachments are raw DHT
-blobs and are not E2E encrypted. Direct-message attachments are sealed inside
+traffic, and DHT blob requests. Server-channel attachments are raw DHT blobs
+(including signed chunk manifests) and are not E2E encrypted. Direct-message attachments are sealed inside
 the DM envelope, or split across independently sealed encrypted chunks for
 larger files. Do not treat this node as a privacy boundary for every message
 type.

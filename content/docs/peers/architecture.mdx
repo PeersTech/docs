@@ -134,9 +134,9 @@ Direct-message attachments up to 8 MiB are supported. Small files use one
 sealed DM envelope; larger files are split into independently sealed 24 KiB
 chunks. Each chunk is acknowledged separately, duplicate chunks are ignored,
 and incomplete transfers are kept in the sealed local state so they can resume
-after restart. Channel attachments are currently small raw DHT blobs capped at
-64 KiB and are not E2E encrypted. Relay operators can observe DHT hash/metadata
-for those channel attachments.
+after restart. Channel attachments are raw DHT blobs and are not E2E encrypted;
+files up to 8 MiB use signed 24 KiB chunk manifests. Relay operators can observe
+DHT hash/metadata and bytes for those channel attachments.
 
 ## Delivery state and receipts
 

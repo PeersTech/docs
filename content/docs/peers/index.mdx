@@ -46,7 +46,7 @@ The GUI is a shell for the local client. Derived private keys and direct-message
 | Encrypted group attachments | Files up to 8 MiB are sealed to the current group membership; larger files use encrypted chunks |
 | Offline delivery | Text DMs, group messages, and DM attachments retry from a sealed local outbox until acknowledged |
 | Read receipts | Encrypted DM and group read receipts persist the sender's read state; delivery acknowledgements remain separate |
-| Blob parking | Content-addressed bytes via the Kademlia DHT; small channel attachments are not E2E encrypted yet |
+| Blob parking | Content-addressed bytes via the Kademlia DHT; channel attachment chunks are not E2E encrypted |
 | Multi-recipient envelopes | One sealed message addressed to any number of peers |
 | Local keystore | Argon2id + XChaCha20-Poly1305 sealed identity.json |
 | At-rest state | Sealed state.json. Servers, keychains, DM sessions survive restart |
