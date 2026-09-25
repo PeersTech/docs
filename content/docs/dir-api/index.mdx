@@ -29,6 +29,14 @@ Read the [API reference](/docs/dir-api/api-reference) for endpoint details or
   cannot decrypt sealed direct messages. Treat the list as discovery input, not
   as a trust decision.
 
+## Message and attachment boundary
+
+The Directory API is a node registry only. It does not store, proxy, validate,
+or deliver DMs, group DMs, message actions, or attachment bytes. Clients use
+`peersNodes` only as a source of relay candidates, then perform peer identity
+verification and P2P messaging themselves. Group-DM membership and attachment
+privacy belong to the Peers protocol, not to this service.
+
 ## Authentication boundary
 
 The API has no accounts, bearer tokens, or Pterodactyl credentials. `GET /healthz`

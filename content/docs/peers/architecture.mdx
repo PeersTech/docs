@@ -86,6 +86,7 @@ Raw connection limits sit above the relay caps, so the relay budget stays the bi
 | `mnemonic.rs` | BIP39 12/24-word mnemonic generate, decode, encode |
 | `cipher.rs` | ChaCha20-Poly1305 AEAD seal/open with sequence-based nonces |
 | `session.rs` | Per-contact keys: `key_n = HKDF(SHA256^n(root))`, replay protection, out-of-order delivery |
+| `group.rs` | Signed group descriptors and private group invitations |
 | `card.rs` | Self-authenticating peer cards, multi-recipient sealed envelopes |
 | `code.rs` | 12-digit short peer codes, used as DHT rendezvous keys |
 | `server.rs` | Servers, channels, roles, ACLs, invites, snapshots |
@@ -114,3 +115,15 @@ XChaCha20-Poly1305:
 - `node_identity.json`. A headless node has no user message secrets, but this
   file still contains its libp2p routing identity. It is stored plaintext with
   permissions `0600` and must be protected as an operational credential.
+
+## Group DMs and attachments
+
+Group DMs use signed group descriptors containing the owner key, member peer
+IDs, X25519 keys, and a membership revision. Invitations are delivered inside
+sealed direct-message envelopes; the group topic is derived from the group ID,
+not hosted by a directory or relay.
+
+Direct-message attachments up to 40 KiB are placed inside the existing sealed
+DM envelope. Channel attachments are currently small raw DHT blobs capped at
+64 KiB and are not E2E encrypted. Relay operators can observe DHT hash/metadata
+for those channel attachments.
