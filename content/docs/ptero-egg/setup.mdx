@@ -17,11 +17,15 @@ the node does not fail gracefully, it fails to boot at all. None of the
 ```sh
 git clone https://github.com/PeersTech/ptero-egg.git
 cd ptero-egg
+docker login ghcr.io
 docker build -t ghcr.io/peerstech/ptero-egg:latest .
 docker push ghcr.io/peerstech/ptero-egg:latest
 ```
 
-If you would rather not push anywhere, build it as peers-node:local on each Wings host and pick the "build locally" image in the egg.
+If you would rather not push anywhere, build it as `peers-node:local` on each
+Wings host and pick the "build locally" image in the egg. The egg marks that
+option `~peers-node:local` so Wings uses the local image without trying to pull
+it from a registry.
 
 This is worth fixing upstream. If Peers ever puts Tauri behind a cargo feature, --node becomes a plain static-ish binary and this image collapses to a bare debian-slim.
 
@@ -33,9 +37,11 @@ Panel, then Nests, then Import Egg, then upload egg-peers-node.json.
 
 - Docker image: the one you built above.
 - Memory: 1 GB is plenty to run a node. The install needs more. See the note on build memory below.
-- Disk: 3 GB for a source install. Build artifacts stay on the server volume,
-  not Pterodactyl's memory-backed `/tmp`, and are removed after installation.
-  200 MB is enough after installation.
+- Disk: 3 GB for a source install. During the installation container, Pterodactyl
+  exposes the persistent server data at `/mnt/server`; the installer builds in
+  `/mnt/server/.peers-build`, not Pterodactyl's memory-backed `/tmp`, and removes
+  that directory afterward. The runtime container mounts the same volume at
+  `/home/container`; 200 MB is enough after installation.
 - Allocation: one port. Peers uses it for both TCP and QUIC/UDP.
 
 ## Step 3: Open the port, both protocols
@@ -98,9 +104,20 @@ Both people who want to talk must point at the same node.
 
 ## Keep the identity file
 
-The node's identity lives at /home/container/.config/peers/node_identity.json and is generated on first boot.
+The node's identity is generated on first boot at
+`/home/container/.config/peers/node_identity.json` in the runtime container.
+The install container sees that same persistent file as
+`/mnt/server/.config/peers/node_identity.json`; the install does not generate
+the identity. The runtime file is the node's libp2p routing identity, not a
+Pterodactyl account or a bearer token. It is stored plaintext with mode `0600`,
+so restrict panel/file-manager access and do not put it in startup variables or
+logs.
 
-A Pterodactyl reinstall wipes the data volume. Losing this file gives the node a new peer ID, and every client still holding the old one keeps dialling an address that now answers as somebody else. This looks like a network fault, not a configuration change. Download it via the file manager before reinstalling.
+A normal Pterodactyl reinstall preserves the server volume and this file.
+Deleting or recreating the server, replacing its volume, or manually removing
+the file gives the node a new peer ID. Every client still holding the old one
+then keeps dialling an address that now answers as somebody else. Back up the
+file before destructive server operations.
 
 The same applies to the port: pin the allocation. Clients store the port alongside the peer ID, and an ephemeral one invalidates every config on each restart.
 

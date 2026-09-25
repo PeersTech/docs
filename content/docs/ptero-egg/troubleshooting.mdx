@@ -39,7 +39,12 @@ Reservations are being granted then lost. Usually capacity, or an intermediate f
 
 ### Node got a new peer ID after reinstall
 
-The identity file was lost during a Pterodactyl reinstall. Download node_identity.json via the file manager before reinstalling. Pin the port allocation as well.
+The identity file was lost because the server was deleted/recreated, its volume
+was replaced, or the file was removed. In the runtime container it belongs at
+`/home/container/.config/peers/node_identity.json`; the installation container's
+`/mnt/server` path is the same persistent volume. Restore the file before
+starting the node, or distribute the new `PEERS_NODES` line. Pin the port
+allocation as well.
 
 ## Performance issues
 

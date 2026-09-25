@@ -9,7 +9,9 @@ Peers is a Tauri 2 app. The Rust backend handles all cryptographic operations an
 
 ## Security model
 
-The frontend is primarily a presentation shell. Derived private keys and message decryption stay in the Rust backend. The Tauri `invoke()` boundary is the security boundary, with one explicit onboarding exception: the recovery phrase is displayed locally so the user can save it, then passed back to the backend.
+The frontend is primarily a presentation shell. Derived private keys and direct-message decryption stay in the Rust backend. The Tauri `invoke()` boundary is the local client boundary, with one explicit onboarding exception: the recovery phrase is displayed locally so the user can save it, then passed back to the backend.
+
+The network has different confidentiality contracts. Direct messages are sealed envelopes between the intended peers. Server-channel messages, Plaza messages, server/member notices, and relay-control notices are signed or plaintext application payloads. A relay or other subscribed peer can observe those payloads and their routing metadata; libp2p transport encryption does not turn them into end-to-end secrets.
 
 ```
 +-----------------------------------------------------+
@@ -41,7 +43,7 @@ Three different jobs, often confused:
 | Reachability | Being dialable at all | Impossible behind a home router. Needs a public node. |
 | Relaying | Carrying traffic when neither side is dialable | Only a machine with a public address, via Circuit Relay v2. |
 
-DHT bootstrap is not relaying. Peers resolves `_dnsaddr.bootstrap.libp2p.io` TXT records for the public IPFS bootstrap nodes. They help find peers and route queries. They never forward chat traffic and never see plaintext.
+DHT bootstrap is not relaying. Peers resolves `_dnsaddr.bootstrap.libp2p.io` TXT records for the public IPFS bootstrap nodes. They help find peers and route DHT queries; they are not a Peers group-chat service. The application-level confidentiality guarantee still depends on the topic payload: sealed DMs remain sealed, while signed or plaintext topics do not.
 
 Node discovery for relaying is manual today: operators hand out a `PEERS_NODES=` line, and clients paste it into the `PEERS_NODES` env var or `<config>/peers/nodes.json` (a JSON array of multiaddr strings, each ending in `/p2p/<peer-id>`). The env var wins when both are present. The project plan explicitly ships no canonical public node list, since that would make those nodes a de facto central dependency.
 
@@ -99,7 +101,7 @@ Raw connection limits sit above the relay caps, so the relay budget stays the bi
 
 ## Network transports
 
-TCP for reliability, QUIC over UDP for faster setup, Noise for the encrypted handshake, Yamux for stream multiplexing.
+TCP for reliability, QUIC over UDP for faster setup, Noise for the connection handshake, and Yamux for stream multiplexing. Noise protects the libp2p connection between its endpoints; it does not change the application payload from plaintext server, Plaza, or control traffic into an end-to-end secret.
 
 ## State persistence
 
@@ -107,6 +109,8 @@ GUI identity and application state are sealed at rest with Argon2id plus
 XChaCha20-Poly1305:
 
 - `identity.json`. The keystore, permissions `0600`.
-- `state.json`. Servers, keychains, DM sessions, full history.
-- `node_identity.json`. A headless node has no user secrets, so its routing
-  identity is plaintext with permissions `0600` and service-user isolation.
+- `state.json`. Servers, keychains, DM sessions, and bounded message history
+  (up to 2,000 messages per conversation and 512 conversations per category).
+- `node_identity.json`. A headless node has no user message secrets, but this
+  file still contains its libp2p routing identity. It is stored plaintext with
+  permissions `0600` and must be protected as an operational credential.

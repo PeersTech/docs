@@ -19,7 +19,11 @@ The trap is that DHT bootstrap is not relaying. Peers already talks to the publi
 
 A node fixes that. Both peers dial the node, each reserves a circuit slot through it, and their messages flow. Then DCUtR hole-punching upgrades the connection to direct whenever the two NATs allow it, and the node drops out of the path entirely. It is a switchboard, not a bottleneck.
 
-The node never reads anything. Messages are sealed end-to-end before they touch the wire. It sees ciphertext and routing metadata, nothing else.
+A relay node does not decrypt sealed direct messages. It can, however, observe
+the gossipsub payloads for topics it meshes: direct messages are sealed, while
+server-channel, Plaza, and relay-control traffic is signed or plaintext. Treat
+an operator's node as a relay and metadata observer, not as a privacy boundary
+for every Peers topic.
 
 You do not need one if both peers are on the same LAN, or either peer has a public IP, port forwarding, or open IPv6. You do if both of you are on ordinary home or mobile connections. If you are unsure, unlock Peers and look at the connectivity line next to the channel name. `no relay node configured` means cross-NAT chat will not work yet.
 
@@ -186,8 +190,8 @@ ExecStart=/usr/local/bin/peers --node
 Restart=always
 RestartSec=10
 
-# The node holds no user secrets. It only routes ciphertext, so it can be
-# locked down hard.
+# The node has no GUI user keystore, but it can relay signed/plaintext
+# protocol topics as well as sealed DMs. Protect access to the service.
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict

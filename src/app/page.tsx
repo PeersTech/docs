@@ -16,13 +16,13 @@ import { mono } from '@/lib/fonts';
 const features = [
   {
     icon: ShieldCheck,
-    title: 'End-to-end encrypted',
-    body: 'ChaCha20-Poly1305 with per-session HKDF hash-chain keys. A fresh key per message, forward secrecy throughout.',
+    title: 'Sealed direct messages',
+    body: 'Direct messages use ChaCha20-Poly1305 with directional HKDF hash-chain keys. Server, Plaza, and control topics follow their own signed or plaintext protocol contracts.',
   },
   {
     icon: ServerOff,
     title: 'Serverless by design',
-    body: 'No central account or message database. Derived private keys and message decryption stay in the Rust backend; optional relay infrastructure helps peers behind NAT connect.',
+    body: 'No central account or project message database. Derived private keys and direct-message decryption stay in the Rust backend; relay infrastructure helps peers behind NAT connect.',
   },
   {
     icon: Network,
@@ -126,7 +126,7 @@ export default function Home() {
             <div className="mx-auto max-w-4xl">
               <p className="rise inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[13px] font-medium text-[#98a2b3]">
                 <span className="live-dot inline-block h-2 w-2 rounded-full bg-[#47cd89]" />
-                Serverless, encrypted, peer-to-peer
+                Serverless, peer-to-peer, sealed DMs
               </p>
               <h1
                 className="rise display-hero mx-auto mt-6 max-w-3xl font-semibold"
@@ -140,8 +140,10 @@ export default function Home() {
               >
                 Peers is a desktop messenger where direct messages are sealed
                 end-to-end and delivered peer-to-peer over a public
-                libp2p mesh. No accounts, no company reading along, and no central message database to
-                seize.
+                libp2p mesh. Server-channel, Plaza, and relay-control traffic is
+                signed or plaintext, so relays are not a privacy boundary for
+                those topics. No accounts, no central message database, and no
+                company-operated message store.
               </p>
               <div
                 className="rise mt-9 flex flex-wrap items-center justify-center gap-3"
@@ -193,7 +195,7 @@ export default function Home() {
           <section className="mx-auto max-w-6xl px-6 py-10">
             <p className="text-center text-sm font-semibold text-[#ff8a4d]">Why Peers</p>
             <h2 className="display-section mx-auto mt-3 max-w-2xl text-center font-semibold">
-              Chat that trusts no one but the people chatting
+              Private DMs without a central message database
             </h2>
             <BentoGrid>
               {features.map((f, index) => (
@@ -289,7 +291,7 @@ export default function Home() {
                   href: '/docs/peers',
                   tag: 'App',
                   name: 'Peers',
-                  body: 'The messenger itself. Tauri desktop app, Rust crypto core, React shell. Keys never leave the backend.',
+                  body: 'The messenger itself. Tauri desktop app, Rust crypto core, React shell. Client keys and direct-message decryption stay in the backend.',
                   cta: 'Explore Peers',
                 },
                 {
@@ -380,7 +382,9 @@ export default function Home() {
                 Egg
               </Link>
             </nav>
-            <p className="text-xs text-[#667085]">No accounts. No central message database.</p>
+            <p className="text-xs text-[#667085]">
+              No accounts. No central message database. Relays can observe signed or plaintext topics.
+            </p>
           </div>
         </footer>
       </div>

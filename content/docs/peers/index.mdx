@@ -1,17 +1,21 @@
 ---
 title: Peers
-description: A serverless, end-to-end encrypted messenger
+description: A serverless peer-to-peer messenger with sealed direct messages
 ---
 
-A serverless, end-to-end encrypted messenger. No accounts, no central message
-server, and no project-operated message database. Optional relay infrastructure
-helps peers behind NAT connect.
+A serverless, peer-to-peer messenger. No accounts, no central message server,
+and no project-operated message database. Direct messages are sealed end-to-end
+between their peers. Server-channel, Plaza, and relay-control traffic has a
+different protocol contract: it is signed or plaintext, not an end-to-end
+secret from every relay or subscribed peer. Optional relay infrastructure helps
+peers behind NAT connect.
 
 ## What Peers does
 
 Direct messages are sealed end-to-end and delivered peer-to-peer over a public
 libp2p network. There is no central account or message database operated by
-Peers; optional relay nodes carry ciphertext and routing metadata.
+Peers. Optional relay nodes carry sealed DM envelopes as well as the signed or
+plaintext payloads needed for server, Plaza, and relay-control topics.
 
 ```
 Peers (Tauri 2)
@@ -21,31 +25,31 @@ Peers (Tauri 2)
 |  Vite + Tailwind 4        |  |  invoke() -> crypto -> p2p   |
 +---------------------------+  +------------------------------+
           |                           |
-          |         E2E ciphertext    | sealed envelopes + blobs
+          |         sealed DMs       | signed/plaintext topics
           v                           v
 +------------------------------------------------------------+
 |  Public IPFS testnet: gossipsub topics + Kademlia DHT      |
-|  (live chat)                 (torrent-style blob parking)  |
+|  (live traffic)                 (content-addressed blobs)  |
 +------------------------------------------------------------+
 ```
 
-The GUI is a shell only. Derived private keys and message decryption never leave the Rust backend. During first-run recovery, the frontend displays the recovery phrase so you can save it, then sends it back to the backend for identity setup.
+The GUI is a shell for the local client. Derived private keys and direct-message decryption never leave the Rust backend. During first-run recovery, the frontend displays the recovery phrase so you can save it, then sends it back to the backend for identity setup.
 
 ## Features
 
 | Feature | Description |
 |---|---|
-| End-to-end encryption | ChaCha20-Poly1305, per-session HKDF hash-chain keys, forward secrecy |
-| Serverless | No backend, no accounts, no phone number, no database |
-| P2P messaging | gossipsub live topics on the public libp2p network |
-| Blob parking | Share large files torrent-style via the Kademlia DHT |
+| Direct-message encryption | ChaCha20-Poly1305 envelopes with directional HKDF hash-chain keys |
+| Serverless | No central account service, phone number, or project message database |
+| P2P messaging | gossipsub carries sealed DMs plus signed or plaintext server, Plaza, and control topics |
+| Blob parking | Content-addressed bytes via the Kademlia DHT; the caller chooses whether data is sealed |
 | Multi-recipient envelopes | One sealed message addressed to any number of peers |
 | Local keystore | Argon2id + XChaCha20-Poly1305 sealed identity.json |
 | At-rest state | Sealed state.json. Servers, keychains, DM sessions survive restart |
 | Presence | Live online/offline dots per member across the mesh |
 | Signed snapshots | Owner-signed server history export and import |
 | Deterministic dialing | Invites carry the owner's listen addresses |
-| NAT-friendly | TCP + QUIC transports, noise encryption, public bootstrap nodes |
+| NAT-friendly | TCP + QUIC transports, libp2p Noise transport security, public bootstrap nodes |
 | Cross-platform | Windows, macOS and Linux installers built by GitHub Actions |
 
 ## Cryptography
@@ -54,12 +58,12 @@ The GUI is a shell only. Derived private keys and message decryption never leave
 |---|---|
 | Identity | Ed25519 (peer IDs) + X25519 (ECDH) |
 | Key agreement | X25519 ECDH + HKDF to session root key |
-| Session keys | key_n = HKDF(SHA256^n(root)). Fresh key per message. |
-| Message encryption | ChaCha20-Poly1305 AEAD with authenticated channel context |
+| Session keys | Directional key_n = HKDF(SHA256^n(root), direction). Fresh key per message. |
+| Direct-message encryption | ChaCha20-Poly1305 AEAD with authenticated peer-topic context |
 | Keystore | Argon2id (KDF) + XChaCha20-Poly1305 (at-rest encryption) |
-| Transport security | libp2p noise handshake (IK) with TLS-grade forward secrecy |
+| Transport security | libp2p Noise handshake; protects each connection, not plaintext application payloads |
 
-Every design decision is pinned by unit tests. Tamper, replay, out-of-order, wrong-AAD and third-party-open attacks are all covered.
+Unit tests cover the local crypto and protocol invariants, including tamper, replay, out-of-order, wrong-AAD, and third-party-open cases. They do not turn signed or plaintext gossipsub topics into end-to-end encrypted channels.
 
 ## Repository layout
 

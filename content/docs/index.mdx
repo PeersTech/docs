@@ -3,16 +3,19 @@ title: Introduction
 description: Welcome to the PeersTech documentation
 ---
 
-Tools for decentralized communication. No central message server, accounts, or
-project-operated message database. Optional relay nodes and a node directory
-make communication across NATs possible.
+Tools for decentralized communication. Peers has no central message server,
+accounts, or project-operated message database. Direct messages are sealed
+end-to-end between their peers; server-channel, Plaza, and relay-control
+payloads are signed or plaintext protocol traffic and are not end-to-end
+secrets. Optional relay nodes and a node directory make communication across
+NATS possible.
 
 ## Projects
 
 <Cards>
   <Card
     title="Peers"
-    description="An end-to-end encrypted messenger. Peer-to-peer over libp2p."
+    description="A peer-to-peer messenger with sealed direct messages over libp2p."
     href="/docs/peers"
   />
   <Card
@@ -48,8 +51,8 @@ graph TB
         H[Node N]
     end
 
-    A -->|E2E Encrypted| C
-    B -->|E2E Encrypted| C
+    A -->|Sealed DMs| C
+    B -->|Sealed DMs| C
     C --> D
     C --> E
     F --> C
@@ -74,9 +77,9 @@ graph TB
     A -.-|Planned: fetch nodes| I
 ```
 
-Peers find each other over the public IPFS DHT. That solves discovery. Relay nodes solve reachability: both NAT'd peers dial the same node, reserve a circuit, and chat. DCUtR then tries to upgrade them to a direct connection.
+Peers find each other over the public IPFS DHT. That solves discovery. Relay nodes solve reachability: both NAT'd peers dial the same node, reserve a circuit, and exchange traffic. Direct-message envelopes remain sealed; the other gossipsub topics carry signed or plaintext protocol payloads. DCUtR then tries to upgrade the connection to a direct one.
 
-Today, an operator copies the `PEERS_NODES=` line from `peers --node` and hands it to both users, who paste it into `PEERS_NODES` or `nodes.json`. The Directory API already accepts registrations and heartbeats from nodes. Client fetching is the planned next step, not yet wired.
+Today, an operator copies the `PEERS_NODES=` line from `peers --node` and hands it to both users, who paste it into `PEERS_NODES` or `nodes.json`. The Directory API already accepts signed registrations and heartbeats from nodes. Client fetching is the planned next step, not yet wired. A relay node is not a privacy boundary for signed or plaintext server, Plaza, and control topics; see [the security model](/docs/peers/architecture).
 
 ## Design principles
 

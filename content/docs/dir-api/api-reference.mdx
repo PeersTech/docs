@@ -3,13 +3,19 @@ title: API reference
 description: Endpoint documentation for the Directory API
 ---
 
-All endpoints return JSON with `{ok: boolean, protocol: 1, ...}`.
+All endpoints return JSON with `{ok: boolean, protocol: 1, ...}` and send an
+`X-Peers-Protocol: 1` response header.
 
 Every response carries `heartbeatAfterSec`. The service currently uses a fixed
-30-minute heartbeat cadence. Registration and heartbeat proofs are verified;
-read and health endpoints are intentionally unauthenticated.
+30-minute heartbeat cadence. There is no bearer token or account system:
+health and list reads are public, registration uses a signed single-use
+challenge, and heartbeats use a signed timestamp.
 
-Addresses are `multiaddrs`: comma-separated full multiaddrs, each ending in `/p2p/<same peer id>`. That is the same format as `PEERS_NODES`, so the list endpoint output drops straight into client config.
+Addresses are `multiaddrs`: comma-separated full multiaddrs, each ending in
+`/p2p/<same peer id>`. The registry accepts IP4, IP6, DNS4, DNS6, and DNSADDR
+hosts; DNSADDR entries have no explicit port, while the other forms must end in
+`/tcp/<port>` or `/udp/<port>` (QUIC adds `/quic-v1`). That is the same format
+as `PEERS_NODES`, so the list endpoint output drops straight into client config.
 
 Tiers are the Peers relay tiers: `citizen`, `node`, or `off`. Anything else is rejected with 400. Absent means `node`. Nodes with `tier: "off"` are accepted for bookkeeping but omitted from relay discovery.
 
@@ -25,13 +31,20 @@ Response:
 {
   "ok": true,
   "protocol": 1,
-  "nodes": 1234
+  "heartbeatAfterSec": 1800,
+  "nodes": 1234,
+  "metrics": {
+    "registeredNodes": 1234,
+    "freshNodes": 987
+  }
 }
 ```
 
 ## Challenge
 
-Get a single-use nonce for registration. Expires after 5 minutes.
+Get a single-use nonce for registration. Expires after 5 minutes. If the peer
+already has an unexpired challenge, the service returns that existing nonce
+instead of invalidating it with a new request.
 
 ```
 GET /v1/challenge?peerId={peerId}
@@ -56,6 +69,7 @@ Response:
 Errors:
 
 - `400` — malformed peer id
+- `429` — peer or source-IP request limit exceeded
 
 ## Register
 
@@ -107,7 +121,9 @@ Errors:
 
 ## Heartbeat
 
-Keep a node alive. Inside half the told cadence, this is a free ack (write-skipped) rather than a write. Unknown nodes may bootstrap straight into a heartbeat, but then they must supply addresses.
+Keep a node alive. Inside half the configured cadence, this is a free ack
+(write-skipped) rather than a write. Unknown nodes may bootstrap straight into
+a heartbeat, but then they must supply addresses.
 
 ```
 POST /v1/heartbeat
@@ -199,4 +215,9 @@ Response:
 }
 ```
 
-Newest first. The cursor is a composite `lastSeen:peerId` pair, so rows sharing a timestamp never straddle or repeat across pages. `nextCursor` is present only when another page exists.
+Newest first. The cursor is a composite `lastSeen:peerId` pair, so rows sharing a timestamp never straddle or repeat across pages. `nextCursor` is present only when another page exists. Records with `tier: "off"` are omitted from this fresh relay list, while `/healthz` counts all stored rows.
+
+Errors:
+
+- `400` — `limit` must be an integer between 1 and 500
+- `400` — `cursor` is invalid

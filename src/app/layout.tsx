@@ -5,11 +5,11 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: {
-    default: 'PeersTech — serverless encrypted communication',
+    default: 'PeersTech — serverless peer-to-peer communication',
     template: '%s · PeersTech',
   },
   description:
-    'Peers is a serverless, end-to-end encrypted messenger with no central account or message database. Optional relay nodes and a node directory help peers behind NAT connect.',
+    'Peers is a serverless peer-to-peer messenger with sealed direct messages, no central account or project message database, and optional relay infrastructure for peers behind NAT.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

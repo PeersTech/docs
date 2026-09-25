@@ -9,7 +9,11 @@ Production URL: https://directory.peers.dpdns.org
 
 ## Status
 
-The service is live and the protocol is stable. Peers clients do not call it yet. Today, operators copy the `PEERS_NODES=` line from `peers --node` and hand it to users by hand. The intended flow once wired: fetch `/v1/nodes`, use `peersNodes` as `PEERS_NODES` or split it on commas into `nodes.json`.
+The service is live and the v1 contract is implemented. Peers clients do not
+call it yet. Today, operators copy the `PEERS_NODES=` line from `peers --node`
+and hand it to users by hand. The intended flow once wired: fetch
+`/v1/nodes`, use `peersNodes` as `PEERS_NODES` or split it on commas into
+`nodes.json`.
 
 Peer discovery itself needs no directory. Finding *where a peer is* already works over the public IPFS DHT. This service solves the narrower problem: finding *relay nodes with public addresses* so two NAT'd peers have something to dial.
 
@@ -19,7 +23,20 @@ Read the [API reference](/docs/dir-api/api-reference) for endpoint details or
 - A libp2p peer ID embeds its own Ed25519 public key. Registration and heartbeat proofs are verified against the key inside the ID. Read and health endpoints are public. No accounts, no trust on first use.
 - Every multiaddr is bounded, checked for a common transport shape, and must terminate at `/p2p/<same peer id>` that signed. The registry verifies the suffix, not whether an address is reachable.
 - Nonces are consumed atomically (`DELETE ... RETURNING`). Replays fail.
-- Clients still dial and verify locally. A hostile directory can degrade onboarding, never read traffic. There is no traffic here to read.
+- Clients still dial and verify locally. The directory itself carries no
+  message traffic, but a hostile directory can return a valid malicious relay.
+  That relay can observe signed or plaintext topics and routing metadata; it
+  cannot decrypt sealed direct messages. Treat the list as discovery input, not
+  as a trust decision.
+
+## Authentication boundary
+
+The API has no accounts, bearer tokens, or Pterodactyl credentials. `GET /healthz`
+and `GET /v1/nodes` are public. `POST /v1/register` requires a single-use
+challenge signed by the Ed25519 key embedded in the submitted peer ID.
+`POST /v1/heartbeat` requires a signed timestamp within the skew window; it does
+not use a durable nonce. TLS is required for the public service so requests and
+signatures are not exposed in transit.
 
 ## Scale
 

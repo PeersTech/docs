@@ -41,13 +41,17 @@ current pipeline does not install a Mermaid renderer.
 
 ```sh
 npm run lint
+npm run validate:content
+npm run typecheck
 npm run build
 ```
 
-The repository does not currently have a dedicated MDX link checker or content
-snapshot test. When changing routes, verify every internal link manually and
-keep the landing-page links in `src/app/page.tsx` aligned with the content map
-above.
+`npm run validate:content` is an offline route/link check. It derives routes
+from `content/docs/`, checks hand-written internal links in MDX, source files,
+and this README, and does not fetch external URLs. It complements the MDX
+compilation performed by `next build`; it is not a full MDX or external-link
+validator. When changing routes, keep the landing-page links in
+`src/app/page.tsx` aligned with the content map above.
 
 ## Deploy on Vercel
 

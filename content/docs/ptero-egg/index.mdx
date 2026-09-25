@@ -10,10 +10,11 @@ A node is what lets two people behind ordinary home routers talk to each other. 
 This egg requires a custom runtime image before the panel setup is complete.
 For a native VPS or Raspberry Pi deployment, use the [native node guide](/docs/peers/running-a-node).
 
-The node never decrypts sealed direct messages. It does process signed control
-traffic and server-channel messages, so it can observe that metadata and
-plaintext protocol content. Running one does not make you a trusted party for
-the full protocol.
+The node never decrypts sealed direct messages. It does process signed
+server/member control, Plaza, and plaintext relay-control traffic, so it can
+observe that metadata and plaintext protocol content. Running one does not make
+you a trusted party for the full protocol; use a relay only when that visibility
+is acceptable.
 
 ## Files
 
