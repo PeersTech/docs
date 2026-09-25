@@ -85,7 +85,7 @@ Raw connection limits sit above the relay caps, so the relay budget stays the bi
 | `seed.rs` | HKDF domain-separated derivation from mnemonic entropy |
 | `mnemonic.rs` | BIP39 12/24-word mnemonic generate, decode, encode |
 | `cipher.rs` | ChaCha20-Poly1305 AEAD seal/open with sequence-based nonces |
-| `session.rs` | Per-contact keys: `key_n = HKDF(SHA256^n(root))`, replay protection, out-of-order delivery |
+| `session.rs` | Per-contact keys: `key_n = HKDF(SHA256^n(root))`, random per-process envelope nonces, replay protection, out-of-order delivery |
 | `group.rs` | Signed group descriptors and private group invitations |
 | `card.rs` | Self-authenticating peer cards, multi-recipient sealed envelopes |
 | `code.rs` | 12-digit short peer codes, used as DHT rendezvous keys |
@@ -123,6 +123,11 @@ The sealed local state can be exported as an encrypted package and imported
 into another installation while locked. Import validates the package envelope
 and atomically replaces the local file; the recovery phrase still has to unlock
 it. Automatic background synchronization is not implemented yet.
+
+Sealed DM envelopes carry a random per-process session nonce. It is mixed into
+message-key derivation, so two devices restored from the same recovery phrase
+do not reuse the same key/nonce pair. Legacy v1 envelopes remain readable;
+replay state resets when a new session nonce arrives.
 
 Relay topic requests have a global cap, a per-peer cap, and an expiry. Observed
 external addresses must be public IP addresses before they can be advertised.
