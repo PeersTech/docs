@@ -117,6 +117,22 @@ XChaCha20-Poly1305:
   file still contains its libp2p routing identity. It is stored plaintext with
   permissions `0600` and must be protected as an operational credential.
 
+## Plugins
+
+The first plugin runtime is intentionally narrow: a manifest may request only
+`message:transform`, and the code runs inside a Worker without filesystem,
+shell, credential, network, DOM, or Tauri APIs. Signing and revocation are not
+implemented yet; treat locally loaded plugins as untrusted code until that
+workflow exists.
+
+## Calls
+
+Voice and video calls use WebRTC. Call signaling (`offer`, `answer`, `hangup`,
+and ICE candidates) travels inside the existing sealed DM envelope, so relays
+can carry routing metadata but cannot read the signaling payload. Media is
+peer-to-peer; TURN is required for the hardest NAT cases and is not yet
+operated as part of this project.
+
 ## State transfer and hardening
 
 The sealed local state can be exported as an encrypted package and imported
