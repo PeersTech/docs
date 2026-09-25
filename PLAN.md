@@ -12,8 +12,8 @@
 
 ## Delivery semantics follow-up
 
-**Goal:** Document the offline outbox, delivery acknowledgements, and DM read
-receipts without overstating group or attachment guarantees.
+**Goal:** Document the offline outbox, delivery acknowledgements, and DM/group
+read receipts without overstating attachment guarantees.
 
 **Files touched:** `content/docs/peers/architecture.mdx`,
 `content/docs/peers/index.mdx`, `content/docs/ptero-egg/index.mdx`, and this

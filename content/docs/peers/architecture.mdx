@@ -141,8 +141,8 @@ conversation header. A live publish failure does not discard the queued
 message. The recipient removes an entry after sending an encrypted delivery
 acknowledgement.
 
-DM read receipts are a separate encrypted control message. They are sent when
-a DM conversation is opened, update the sender's stored read state, and do not
-mean that a relay or the recipient's device can read the message plaintext.
-Group delivery acknowledgements currently indicate delivery; group read
-receipts are not implemented.
+DM and group read receipts are separate encrypted control messages. They are
+sent when the corresponding conversation is opened, update the sender's stored
+read state, and do not mean that a relay or the recipient's device can read the
+message plaintext. Group delivery acknowledgements remain separate from group
+read receipts.
