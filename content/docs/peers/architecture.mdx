@@ -117,6 +117,18 @@ XChaCha20-Poly1305:
   file still contains its libp2p routing identity. It is stored plaintext with
   permissions `0600` and must be protected as an operational credential.
 
+## State transfer and hardening
+
+The sealed local state can be exported as an encrypted package and imported
+into another installation while locked. Import validates the package envelope
+and atomically replaces the local file; the recovery phrase still has to unlock
+it. Automatic background synchronization is not implemented yet.
+
+Relay topic requests have a global cap, a per-peer cap, and an expiry. Observed
+external addresses must be public IP addresses before they can be advertised.
+Incoming history is persisted before delivery ACKs are published, and blob
+responses are hash-checked before storage.
+
 ## Group DMs and attachments
 
 Group DMs use signed group descriptors containing the owner key, member peer

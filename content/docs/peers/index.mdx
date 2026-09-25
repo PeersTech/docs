@@ -50,6 +50,7 @@ The GUI is a shell for the local client. Derived private keys and direct-message
 | Multi-recipient envelopes | One sealed message addressed to any number of peers |
 | Local keystore | Argon2id + XChaCha20-Poly1305 sealed identity.json |
 | At-rest state | Sealed state.json. Servers, keychains, DM sessions survive restart |
+| Device state transfer | Sealed state packages can be exported and imported on another install; automatic sync is not implemented |
 | Presence | Live online/offline dots per member across the mesh |
 | Signed snapshots | Owner-signed server history export and import |
 | Deterministic dialing | Invites carry the owner's listen addresses |

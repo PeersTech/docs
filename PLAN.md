@@ -19,8 +19,8 @@ receipts, and current attachment guarantees without overstating them.
 `content/docs/peers/index.mdx`, `content/docs/ptero-egg/index.mdx`, and this
 plan.
 
-**Status:** complete — the protocol boundary and chunked attachment path are
-documented.
+**Status:** complete — the protocol boundary, chunked attachments, and manual
+sealed state transfer are documented.
 
 **Implemented:** Reconciled the docs and landing metadata with the current
 protocol: only direct messages are sealed end-to-end; signed/plaintext server,
