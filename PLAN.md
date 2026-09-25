@@ -16,10 +16,11 @@
 receipts without overstating group or attachment guarantees.
 
 **Files touched:** `content/docs/peers/architecture.mdx`,
-`content/docs/peers/index.mdx`, and this plan.
+`content/docs/peers/index.mdx`, `content/docs/ptero-egg/index.mdx`, and this
+plan.
 
-**Status:** complete — the protocol boundary is documented; chunked/resumable
-large attachments remain future work.
+**Status:** complete — the protocol boundary and chunked attachment path are
+documented.
 
 **Implemented:** Reconciled the docs and landing metadata with the current
 protocol: only direct messages are sealed end-to-end; signed/plaintext server,

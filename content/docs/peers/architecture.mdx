@@ -124,8 +124,11 @@ IDs, X25519 keys, and a membership revision. Invitations are delivered inside
 sealed direct-message envelopes; the group topic is derived from the group ID,
 not hosted by a directory or relay.
 
-Direct-message attachments up to 40 KiB are placed inside the existing sealed
-DM envelope. Channel attachments are currently small raw DHT blobs capped at
+Direct-message attachments up to 8 MiB are supported. Small files use one
+sealed DM envelope; larger files are split into independently sealed 24 KiB
+chunks. Each chunk is acknowledged separately, duplicate chunks are ignored,
+and incomplete transfers are kept in the sealed local state so they can resume
+after restart. Channel attachments are currently small raw DHT blobs capped at
 64 KiB and are not E2E encrypted. Relay operators can observe DHT hash/metadata
 for those channel attachments.
 
@@ -142,5 +145,4 @@ DM read receipts are a separate encrypted control message. They are sent when
 a DM conversation is opened, update the sender's stored read state, and do not
 mean that a relay or the recipient's device can read the message plaintext.
 Group delivery acknowledgements currently indicate delivery; group read
-receipts are not implemented. Large chunked/resumable attachments are also not
-implemented yet.
+receipts are not implemented.
