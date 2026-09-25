@@ -124,6 +124,10 @@ IDs, X25519 keys, and a membership revision. Invitations are delivered inside
 sealed direct-message envelopes; the group topic is derived from the group ID,
 not hosted by a directory or relay.
 
+Small group attachments up to 40 KiB are sealed to the current group
+membership, carry the membership revision, and use the same outbox and delivery
+acknowledgements as group text. Large group attachments are not chunked yet.
+
 Direct-message attachments up to 8 MiB are supported. Small files use one
 sealed DM envelope; larger files are split into independently sealed 24 KiB
 chunks. Each chunk is acknowledged separately, duplicate chunks are ignored,
