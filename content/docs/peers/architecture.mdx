@@ -110,8 +110,9 @@ GUI identity and application state are sealed at rest with Argon2id plus
 XChaCha20-Poly1305:
 
 - `identity.json`. The keystore, permissions `0600`.
-- `state.json`. Servers, keychains, DM sessions, and bounded message history
-  (up to 2,000 messages per conversation and 512 conversations per category).
+- `state.json`. Servers, keychains, DM sessions, bounded message history
+  (up to 2,000 messages per conversation and 512 conversations per category),
+  and the encrypted-at-rest pending message outbox.
 - `node_identity.json`. A headless node has no user message secrets, but this
   file still contains its libp2p routing identity. It is stored plaintext with
   permissions `0600` and must be protected as an operational credential.
@@ -127,3 +128,19 @@ Direct-message attachments up to 40 KiB are placed inside the existing sealed
 DM envelope. Channel attachments are currently small raw DHT blobs capped at
 64 KiB and are not E2E encrypted. Relay operators can observe DHT hash/metadata
 for those channel attachments.
+
+## Delivery state and receipts
+
+Text DMs, group messages, and DM attachments are written to a local outbox
+after local encryption succeeds. The outbox is restored on unlock,
+retried by the connectivity poller, and can be retried explicitly from the
+conversation header. A live publish failure does not discard the queued
+message. The recipient removes an entry after sending an encrypted delivery
+acknowledgement.
+
+DM read receipts are a separate encrypted control message. They are sent when
+a DM conversation is opened, update the sender's stored read state, and do not
+mean that a relay or the recipient's device can read the message plaintext.
+Group delivery acknowledgements currently indicate delivery; group read
+receipts are not implemented. Large chunked/resumable attachments are also not
+implemented yet.

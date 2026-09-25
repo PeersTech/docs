@@ -10,6 +10,17 @@
 
 **Status:** complete
 
+## Delivery semantics follow-up
+
+**Goal:** Document the offline outbox, delivery acknowledgements, and DM read
+receipts without overstating group or attachment guarantees.
+
+**Files touched:** `content/docs/peers/architecture.mdx`,
+`content/docs/peers/index.mdx`, and this plan.
+
+**Status:** complete — the protocol boundary is documented; chunked/resumable
+large attachments remain future work.
+
 **Implemented:** Reconciled the docs and landing metadata with the current
 protocol: only direct messages are sealed end-to-end; signed/plaintext server,
 Plaza, and relay-control topics are called out. Corrected Pterodactyl's
