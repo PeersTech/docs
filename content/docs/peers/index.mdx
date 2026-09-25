@@ -42,7 +42,7 @@ The GUI is a shell for the local client. Derived private keys and direct-message
 | Direct-message encryption | ChaCha20-Poly1305 envelopes with directional HKDF hash-chain keys |
 | Serverless | No central account service, phone number, or project message database |
 | P2P messaging | gossipsub carries sealed DMs plus signed or plaintext server, Plaza, and control topics |
-| Blob parking | Content-addressed bytes via the Kademlia DHT; the caller chooses whether data is sealed |
+| Blob parking | Content-addressed bytes via the Kademlia DHT; small channel attachments are not E2E encrypted yet |
 | Multi-recipient envelopes | One sealed message addressed to any number of peers |
 | Local keystore | Argon2id + XChaCha20-Poly1305 sealed identity.json |
 | At-rest state | Sealed state.json. Servers, keychains, DM sessions survive restart |
