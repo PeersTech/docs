@@ -43,7 +43,7 @@ The GUI is a shell for the local client. Derived private keys and direct-message
 | Serverless | No central account service, phone number, or project message database |
 | P2P messaging | gossipsub carries sealed DMs plus signed or plaintext server, Plaza, and control topics |
 | Encrypted DM attachments | Files up to 8 MiB travel inside the sealed direct-message protocol; larger files use encrypted chunks |
-| Encrypted group attachments | Small files up to 40 KiB are sealed to the current group membership; large group files are not chunked yet |
+| Encrypted group attachments | Files up to 8 MiB are sealed to the current group membership; larger files use encrypted chunks |
 | Offline delivery | Text DMs, group messages, and DM attachments retry from a sealed local outbox until acknowledged |
 | Read receipts | Encrypted DM and group read receipts persist the sender's read state; delivery acknowledgements remain separate |
 | Blob parking | Content-addressed bytes via the Kademlia DHT; small channel attachments are not E2E encrypted yet |
