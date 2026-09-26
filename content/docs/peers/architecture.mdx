@@ -148,11 +148,21 @@ sandboxed plugin Worker that genuinely need them.
 
 ## Plugins
 
-The first plugin runtime is intentionally narrow: a manifest may request only
+The plugin runtime is intentionally narrow: a manifest may request only
 `message:transform`, and the code runs inside a Worker without filesystem,
-shell, credential, network, DOM, or Tauri APIs. Signing and revocation are not
-implemented yet; treat locally loaded plugins as untrusted code until that
-workflow exists.
+shell, credential, network, DOM, or Tauri APIs.
+
+Plugins are also signed. The Ed25519 signature covers a canonical form of the
+manifest *and* the SHA-256 of the exact source that will run, so a valid
+signature cannot be paired with a swapped script. Trust is explicit: a key must
+be added in Settings before any plugin it signed will load, and the check
+happens before the source reaches the Worker. Revocation is evaluated at load
+time rather than cached, and revoking a key disposes the plugin it signed
+instead of leaving it running.
+
+There is no publisher directory and no key exchange. Getting a key onto a
+device is the user's decision, so a plugin is only as trustworthy as the key
+they chose to trust.
 
 ## Calls
 
