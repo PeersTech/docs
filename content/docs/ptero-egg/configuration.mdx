@@ -8,9 +8,10 @@ description: Environment variables and configuration options
 | Variable | Default | Description |
 |---|---|---|
 | INSTALL_METHOD | source | source or release. See below. |
-| PEERS_REF | main | Branch or tag to build. Pin it for a stable install. |
+| PEERS_REF | pinned commit | Commit SHA to build. The installer refuses to build a different commit than the one pinned. |
 | PEERS_REPO | `https://github.com/PeersTech/Peers.git` | Change only for a fork. |
 | PEERS_RELEASE_SHA256 | none | Required with `INSTALL_METHOD=release`; SHA-256 of the exact `peers-linux-x86_64` asset from a trusted source. |
+| RUSTUP_INIT_SHA256 | none | Required with `INSTALL_METHOD=source`; SHA-256 of `rustup-init`, published alongside the binary at `static.rust-lang.org`. The installer will not execute an unverified rustup. |
 | PEERS_PUBLIC_IP | auto | The address clients dial. This is not authentication; the Directory API authenticates writes with the node's Ed25519 identity signature. |
 | PEERS_ANNOUNCE | none | Full multiaddr override. Advanced. |
 | PEERS_NODES | none | Upstream nodes to chain to. |
@@ -34,6 +35,22 @@ signature, and heartbeats use a signed timestamp.
 ### source (recommended)
 
 Builds the node from the git repository. Slow (10-25 minutes) but always works.
+
+`PEERS_REF` defaults to a pinned commit rather than a branch, so the same egg
+installs the same reviewed code. If you set `PEERS_REF` to a full 40-character
+commit SHA, the installer aborts when the clone resolves to anything else.
+
+Source installs also require `RUSTUP_INIT_SHA256`. The installer downloads
+`rustup-init` as a file, verifies it against that checksum, and refuses to
+execute it otherwise:
+
+```
+RUSTUP_INIT_SHA256=$(curl -fsSL https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init.sha256 | cut -d' ' -f1)
+```
+
+Supply it as an egg install variable. Piping `rustup.rs` straight into `sh`
+would execute whatever the mirror served at that moment with no integrity
+check at all.
 
 ### release
 
