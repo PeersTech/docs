@@ -117,6 +117,35 @@ XChaCha20-Poly1305:
   file still contains its libp2p routing identity. It is stored plaintext with
   permissions `0600` and must be protected as an operational credential.
 
+## Resource limits and local storage
+
+A node is reachable by anyone, so the limits that keep one peer or one attacker
+from exhausting it are part of the security model rather than an optimisation:
+
+- **Connections** are capped by tier: 64 established inbound for a client, 512
+  for a dedicated node, and 8 per peer. The node figure sits deliberately above
+  the relay reservation cap so a full circuit-v2 node declines reservations
+  rather than refusing connections at random.
+- **Relay bandwidth** is charged per peer on a rolling one-minute window. Once
+  a peer spends its 64 MiB, its messages are dropped. The over-budget state
+  survives reconnection, so a peer cannot reset by reconnecting.
+- **Relay topics** are bounded globally, per peer, and by expiry.
+- **Parked blobs** are written `0600` rather than at the ambient umask, bounded
+  to 256 MiB on disk with least-recently-accessed eviction, and capped at 32 MiB
+  in memory with LRU eviction. Content is hash-verified before it is stored or
+  served.
+- **Directory registration** is capped per source IP. The cap sits below the
+  per-IP challenge limit, because every registration consumes a challenge
+  nonce and the challenge cap would otherwise always bind first.
+- **Message drafts** were written to `localStorage` in plaintext, which the
+  encrypted state package does not cover. Locking now removes every draft, and
+  drafts over 16 KiB are refused rather than written.
+
+The webview runs under a Content Security Policy rather than none, with the
+`asset` protocol disabled. `object-src`, `base-uri`, and `form-action` are
+closed; the `blob:` allowances exist only for the image previews and the
+sandboxed plugin Worker that genuinely need them.
+
 ## Plugins
 
 The first plugin runtime is intentionally narrow: a manifest may request only
